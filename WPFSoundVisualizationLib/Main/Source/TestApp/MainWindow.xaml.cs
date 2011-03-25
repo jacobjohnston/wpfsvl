@@ -27,7 +27,7 @@ namespace TestApp
             spectrumAnalyzer.RegisterSoundPlayer(bassEngine);
             waveformTimeline.RegisterSoundPlayer(bassEngine);
 
-            LoadDefaultTheme();
+            LoadExpressionDarkTheme();
         }
 
         #region Bass Engine Events

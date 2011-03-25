@@ -947,7 +947,7 @@ namespace WPFSoundVisualizationLib
 
         private void UpdateRepeatRegion()
         {
-            if (soundPlayer == null)
+            if (soundPlayer == null || repeatCanvas == null)
                 return;
 
             if (soundPlayer.ChannelLength == 0)
@@ -968,7 +968,7 @@ namespace WPFSoundVisualizationLib
 
         private void UpdateTimeline()
         {
-            if (soundPlayer == null)
+            if (soundPlayer == null || timelineCanvas == null)
                 return;
 
             foreach (TextBlock textblock in timestampTextBlocks)
@@ -1069,7 +1069,7 @@ namespace WPFSoundVisualizationLib
 
         private void CreateProgressIndicator()
         {
-            if (soundPlayer == null)
+            if (soundPlayer == null || timelineCanvas == null || progressCanvas == null)
                 return;
 
             const double xLocation = 0.0d;
@@ -1095,6 +1095,9 @@ namespace WPFSoundVisualizationLib
 
         private void UpdateProgressIndicator()
         {
+            if (soundPlayer == null || progressCanvas == null)
+                return;
+
             double xLocation = 0.0d;
             if (soundPlayer.ChannelLength != 0)
             {
@@ -1111,7 +1114,7 @@ namespace WPFSoundVisualizationLib
             const double maxValue = 1.5;
             const double dbScale = (maxValue - minValue);
 
-            if (soundPlayer == null || soundPlayer.WaveformData == null || 
+            if (soundPlayer == null || soundPlayer.WaveformData == null || waveformCanvas == null ||
                 waveformCanvas.RenderSize.Width < 1 || waveformCanvas.RenderSize.Height < 1)
                 return;
 
