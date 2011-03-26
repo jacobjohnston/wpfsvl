@@ -31,8 +31,11 @@ using System.Windows.Threading;
 namespace WPFSoundVisualizationLib
 {
     /// <summary>
-    /// A spectrum analyzer control for visualizing audio data.
+    /// A spectrum analyzer control for visualizing audio level and frequency data.
     /// </summary>
+    [DisplayName("Spectrum Analyzer")]
+    [Description("Displays audio level and frequency data.")]
+    [ToolboxItem(true)]
     [TemplatePart(Name = "PART_SpectrumCanvas", Type = typeof(Canvas))]     
     public class SpectrumAnalyzer : Control
     {

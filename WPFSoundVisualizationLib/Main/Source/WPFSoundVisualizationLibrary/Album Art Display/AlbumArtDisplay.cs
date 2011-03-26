@@ -32,9 +32,12 @@ using System.Windows.Media.Imaging;
 namespace WPFSoundVisualizationLib
 {
     /// <summary>
-    /// Represents a control that displays a stereo waveform and
-    /// allows a user to change playback position.
+    /// Represents a control that displays album cover artwork
+    /// with a CD Jewel Case overlay.
     /// </summary>
+    [DisplayName("Album Art Display")]
+    [Description("Displays album cover artwork with a CD Jewel Case overlay.")]
+    [ToolboxItem(true)]
     [TemplatePart(Name = "PART_AlbumArt", Type = typeof(Image))]
     public class AlbumArtDisplay : Control
     {
