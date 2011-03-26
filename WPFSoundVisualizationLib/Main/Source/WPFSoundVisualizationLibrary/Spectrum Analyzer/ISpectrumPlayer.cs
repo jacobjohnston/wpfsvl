@@ -29,7 +29,12 @@ namespace WPFSoundVisualizationLib
         /// <summary>
         /// Assigns current FFT data to a buffer.
         /// </summary>
-        /// <param name="fftDataBuffer">The buffer to copy FFT data</param>
+        /// <remarks>
+        /// The FFT data in the buffer should consist only of the real number values. The spectrum
+        /// analyzer does not use the imaginary number portion of FFT results. If your FFT algorithm
+        /// returns complex numbers, make sure to trim out the imaginary number data.
+        /// </remarks>
+        /// <param name="fftDataBuffer">The buffer to copy FFT data. The buffer should consist of only non-imaginary numbers.</param>
         /// <returns>True if data was written to the buffer, otherwise false.</returns>
         bool GetFFTData(float[] fftDataBuffer);
 
