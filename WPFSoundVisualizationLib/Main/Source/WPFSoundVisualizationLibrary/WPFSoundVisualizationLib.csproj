@@ -107,6 +107,15 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Spectrum Analyzer\WPFSoundVisualizationLib.SpectrumAnalyzer.Icon.Large.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="WaveForm Timeline\WPFSoundVisualizationLib.WaveformTimeline.Icon.Large.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Album Art Display\WPFSoundVisualizationLib.AlbumArtDisplay.Icon.Large.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

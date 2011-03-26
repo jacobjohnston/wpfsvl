@@ -33,6 +33,9 @@ namespace WPFSoundVisualizationLib
     /// Represents a control that displays a stereo waveform and
     /// allows a user to change playback position.
     /// </summary>
+    [DisplayName("Waveform Timeline")]
+    [Description("Displays a stereo waveform and allows a user to change playback position.")]
+    [ToolboxItem(true)]
     [TemplatePart(Name = "PART_Waveform", Type = typeof(Canvas)),
      TemplatePart(Name = "PART_Timeline", Type = typeof(Canvas)),
      TemplatePart(Name = "PART_Repeat", Type = typeof(Canvas)),
