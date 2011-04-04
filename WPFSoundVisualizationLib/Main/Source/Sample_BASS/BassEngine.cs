@@ -11,10 +11,9 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Threading;
 using Un4seen.Bass;
-using Un4seen.Bass.AddOn.Fx;
 using WPFSoundVisualizationLib;
 
-namespace TestApp
+namespace Sample_BASS
 {
     public class BassEngine : IWaveformPlayer, ISpectrumPlayer
     {
@@ -22,17 +21,11 @@ namespace TestApp
         private static BassEngine instance;
         private readonly DispatcherTimer positionTimer = new DispatcherTimer(DispatcherPriority.ApplicationIdle);
         private readonly int maxFFT = (int)(BASSData.BASS_DATA_AVAILABLE | BASSData.BASS_DATA_FFT4096);
-        private readonly BackgroundWorker waveformRecompressWorker = new BackgroundWorker();
         private readonly BackgroundWorker waveformGenerateWorker = new BackgroundWorker();
         private readonly SYNCPROC endTrackSyncProc;
         private readonly SYNCPROC repeatSyncProc;
-        private readonly BPMPROCESSPROC bpmCallbackProc;
         private int sampleFrequency = 44100;
-        private int streamHandle;
-        private int streamFXHandle;
-        private float bpmDecodePercent;
-        private float originalBpm;
-        private float activeBpm;
+        private int activeStreamHandle;
         private TagLib.File fileTag;
         private bool canPlay;
         private bool canPause;
@@ -41,8 +34,6 @@ namespace TestApp
         private bool canStop;
         private double channelLength;
         private double currentChannelPosition;
-        private float cachedTempoChange;
-        private int waveformCompressedPointCount = 2000;
         private float[] fullLevelData;
         private float[] waveformData;
         private bool inChannelSet;
@@ -52,8 +43,8 @@ namespace TestApp
         private string pendingWaveformPath;
         #endregion
 
-        #region Events
-        public event PropertyChangedEventHandler PropertyChanged;
+        #region Constants
+        private const int waveformCompressedPointCount = 2000;
         #endregion
 
         #region Constructor
@@ -61,15 +52,106 @@ namespace TestApp
         {
             Initialize();
             endTrackSyncProc = EndTrack;
-            bpmCallbackProc = BpmCallback;
             repeatSyncProc = RepeatCallback;
-                        
-            waveformRecompressWorker.DoWork += waveformRecompressWorker_DoWork;
-            waveformRecompressWorker.RunWorkerCompleted += waveformRecompressWorker_RunWorkerCompleted;
-            waveformRecompressWorker.WorkerSupportsCancellation = true;
+
             waveformGenerateWorker.DoWork += waveformGenerateWorker_DoWork;
             waveformGenerateWorker.RunWorkerCompleted += waveformGenerateWorker_RunWorkerCompleted;
             waveformGenerateWorker.WorkerSupportsCancellation = true;
+        }
+        #endregion
+
+        #region ISpectrumPlayer
+        public int GetFFTFrequencyIndex(int frequency)
+        {
+            return Utils.FFTFrequency2Index(frequency, 4096, sampleFrequency);
+        }
+
+        public bool GetFFTData(float[] fftDataBuffer)
+        {
+            return (Bass.BASS_ChannelGetData(ActiveStreamHandle, fftDataBuffer, maxFFT)) > 0;
+        }
+        #endregion
+
+        #region IWaveformPlayer
+        public void SetRepeatRange(double startTime, double endTime)
+        {
+            if (repeatSyncId != 0)
+                Bass.BASS_ChannelRemoveSync(ActiveStreamHandle, repeatSyncId);
+
+            long channelLength = Bass.BASS_ChannelGetLength(ActiveStreamHandle);
+            repeatStartTime = startTime;
+            long endPosition = (long)((endTime / ChannelLength) * channelLength);
+            repeatSyncId = Bass.BASS_ChannelSetSync(ActiveStreamHandle,
+                BASSSync.BASS_SYNC_POS,
+                (long)endPosition,
+                repeatSyncProc,
+                IntPtr.Zero);
+        }
+
+        public void ClearRepeatRange()
+        {
+            if (repeatSyncId != 0)
+            {
+                Bass.BASS_ChannelRemoveSync(ActiveStreamHandle, repeatSyncId);
+                repeatSyncId = 0;
+                repeatStartTime = 0;
+            }
+        }
+
+        public double ChannelLength
+        {
+            get { return channelLength; }
+            protected set
+            {
+                double oldValue = channelLength;
+                channelLength = value;
+                if (oldValue != channelLength)
+                    NotifyPropertyChanged("ChannelLength");
+            }
+        }
+
+        public double ChannelPosition
+        {
+            get { return currentChannelPosition; }
+            set
+            {
+                if (!inChannelSet)
+                {
+                    inChannelSet = true; // Avoid recursion
+                    double oldValue = currentChannelPosition;
+                    double position = Math.Max(0, Math.Min(value, ChannelLength));
+                    if (!inChannelTimerUpdate)
+                        Bass.BASS_ChannelSetPosition(ActiveStreamHandle, Bass.BASS_ChannelSeconds2Bytes(ActiveStreamHandle, position));
+                    currentChannelPosition = position;
+                    if (oldValue != currentChannelPosition)
+                        NotifyPropertyChanged("ChannelPosition");
+                    inChannelSet = false;
+                }
+            }
+        }
+
+        public float[] WaveformData
+        {
+            get { return waveformData; }
+            protected set
+            {
+                float[] oldValue = waveformData;
+                waveformData = value;
+                if (oldValue != waveformData)
+                    NotifyPropertyChanged("WaveformData");
+            }
+        }
+        #endregion
+
+        #region INotifyPropertyChanged
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private void NotifyPropertyChanged(String info)
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(info));
+            }
         }
         #endregion
 
@@ -86,49 +168,6 @@ namespace TestApp
         #endregion
 
         #region Public Methods
-        public void SetRepeatRange(double startTime, double endTime)
-        {
-            if (repeatSyncId != 0)
-                Bass.BASS_ChannelRemoveSync(ActiveStreamHandle, repeatSyncId);                
-
-            long channelLength = Bass.BASS_ChannelGetLength(ActiveStreamHandle);
-            repeatStartTime = startTime;
-            long endPosition = (long)((endTime / ChannelLength) * channelLength);
-            repeatSyncId = Bass.BASS_ChannelSetSync(ActiveStreamHandle, 
-                BASSSync.BASS_SYNC_POS, 
-                (long)endPosition, 
-                repeatSyncProc,                
-                IntPtr.Zero);
-        }
-
-        public void ClearRepeatRange()
-        {
-            if (repeatSyncId != 0)
-            {
-                Bass.BASS_ChannelRemoveSync(ActiveStreamHandle, repeatSyncId);
-                repeatSyncId = 0;
-                repeatStartTime = 0;
-            }
-        }
-
-        public int GetFFTFrequencyIndex(int frequency)
-        {
-            return Utils.FFTFrequency2Index(frequency, 4096, sampleFrequency);
-        }
-
-        public bool GetFFTData(float[] fftDataBuffer)
-        {
-            return (Bass.BASS_ChannelGetData(ActiveStreamHandle, fftDataBuffer, maxFFT)) > 0;
-        }
-
-        public void SetTempo(float percentChange)
-        {
-            cachedTempoChange = percentChange;
-            ActiveBPM = OriginalBPM * (1.0f + percentChange);
-            if (ActiveStreamHandle != 0)
-                Bass.BASS_ChannelSetAttribute(ActiveStreamHandle, BASSAttribute.BASS_ATTRIB_TEMPO, percentChange);
-        }
-
         public void Stop()
         {
             ChannelPosition = repeatStartTime;
@@ -181,28 +220,12 @@ namespace TestApp
             if (System.IO.File.Exists(path))
             {
                 // Create Stream
-                FileStreamHandle = Bass.BASS_StreamCreateFile(path, 0, 0, BASSFlag.BASS_STREAM_DECODE | BASSFlag.BASS_SAMPLE_FLOAT | BASSFlag.BASS_STREAM_PRESCAN);
+                FileStreamHandle = ActiveStreamHandle = Bass.BASS_StreamCreateFile(path, 0, 0, BASSFlag.BASS_STREAM_DECODE | BASSFlag.BASS_SAMPLE_FLOAT | BASSFlag.BASS_STREAM_PRESCAN);
                 ChannelLength = Bass.BASS_ChannelBytes2Seconds(FileStreamHandle, Bass.BASS_ChannelGetLength(FileStreamHandle, 0));
                 FileTag = TagLib.File.Create(path);
                 GenerateWaveformData(path);
-                if (streamHandle != 0)
+                if (ActiveStreamHandle != 0)
                 {
-                    double bpmDecodeStart = ChannelLength * 0.25d;
-                    double bpmDecodeEnd = Math.Min(ChannelLength * 0.50d, bpmDecodeStart + 120);
-
-                    // Decode BPM of original file stream
-                    OriginalBPM = BassFx.BASS_FX_BPM_DecodeGet(FileStreamHandle,
-                        bpmDecodeStart,
-                        bpmDecodeEnd,
-                        Utils.MakeLong(50, 250),
-                        BASSFXBpm.BASS_FX_BPM_BKGRND | BASSFXBpm.BASS_FX_FREESOURCE | BASSFXBpm.BASS_FX_BPM_MULT2,
-                        bpmCallbackProc);
-
-                    // Reset position after BPM decode.
-                    Bass.BASS_ChannelSetPosition(FileStreamHandle, 0);
-
-                    // Get FX Stream
-                    ActiveStreamHandle = BassFx.BASS_FX_TempoCreate(streamHandle, BASSFlag.BASS_FX_FREESOURCE | BASSFlag.BASS_SAMPLE_FLOAT);                    
                     BASS_CHANNELINFO info = new BASS_CHANNELINFO();
                     Bass.BASS_ChannelGetInfo(ActiveStreamHandle, info);
                     sampleFrequency = info.freq;
@@ -216,8 +239,7 @@ namespace TestApp
 
                     if (syncHandle == 0)
                         throw new ArgumentException("Error establishing End Sync on file stream.", "path");
-
-                    SetTempo(cachedTempoChange);                                       
+                    
                     CanPlay = true;
                     return true;
                 }
@@ -265,22 +287,22 @@ namespace TestApp
         private void GenerateWaveformData(string path)
         {
             if (waveformGenerateWorker.IsBusy)
-            {                
+            {
                 pendingWaveformPath = path;
                 waveformGenerateWorker.CancelAsync();
                 return;
             }
 
-            if (!waveformGenerateWorker.IsBusy && WaveformCompressedPointCount != 0)
-                waveformGenerateWorker.RunWorkerAsync(new WaveformGenerationParams(WaveformCompressedPointCount, path));
+            if (!waveformGenerateWorker.IsBusy && waveformCompressedPointCount != 0)
+                waveformGenerateWorker.RunWorkerAsync(new WaveformGenerationParams(waveformCompressedPointCount, path));
         }
 
         private void waveformGenerateWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             if (e.Cancelled)
             {
-                if (!waveformGenerateWorker.IsBusy && WaveformCompressedPointCount != 0)
-                    waveformGenerateWorker.RunWorkerAsync(new WaveformGenerationParams(WaveformCompressedPointCount, pendingWaveformPath));
+                if (!waveformGenerateWorker.IsBusy && waveformCompressedPointCount != 0)
+                    waveformGenerateWorker.RunWorkerAsync(new WaveformGenerationParams(waveformCompressedPointCount, pendingWaveformPath));
             }
         }
 
@@ -348,90 +370,6 @@ namespace TestApp
             }));
             Bass.BASS_StreamFree(stream);
         }
-
-        private void RecompressWaveformData()
-        {
-            if (waveformRecompressWorker.IsBusy)
-            {
-                waveformRecompressWorker.CancelAsync();
-                return;
-            }
-
-            if (!waveformRecompressWorker.IsBusy && WaveformCompressedPointCount != 0)
-                waveformRecompressWorker.RunWorkerAsync(new WaveformGenerationParams(WaveformCompressedPointCount, string.Empty));
-        }
-
-        private void waveformRecompressWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            if (e.Cancelled)
-            {
-                if (!waveformRecompressWorker.IsBusy && WaveformCompressedPointCount != 0)
-                    waveformRecompressWorker.RunWorkerAsync(new WaveformGenerationParams(WaveformCompressedPointCount, string.Empty));
-            }
-        }
-
-        private void waveformRecompressWorker_DoWork(object sender, DoWorkEventArgs e)
-        {
-            WaveformGenerationParams waveformParams = e.Argument as WaveformGenerationParams;
-            float[] waveformData = {};
-            App.Current.Dispatcher.Invoke(new Action(() =>
-            {
-                if(fullLevelData != null)
-                    waveformData = (float[])fullLevelData.Clone();
-            }));
-            int waveformLength = waveformData.Length;
-
-            if (waveformLength < 1)
-                return;
-
-            int compressedPointCount = waveformParams.Points * 2;
-            float[] waveformCompressedPoints = new float[compressedPointCount];
-            List<int> waveMaxPointIndexes = new List<int>();
-            for (int i = 1; i <= waveformParams.Points; i++)
-            {
-                waveMaxPointIndexes.Add((int)Math.Round(waveformLength * ((double)i / (double)waveformParams.Points), 0));
-            }
-
-            float maxLeftPointLevel = float.MinValue;
-            float maxRightPointLevel = float.MinValue;
-            int currentPointIndex = 0;
-            for (int i = 0; i < waveformLength; i += 2)
-            {
-                if (waveformData[i] > maxLeftPointLevel)
-                    maxLeftPointLevel = waveformData[i];
-                if (waveformData[i + 1] > maxRightPointLevel)
-                    maxRightPointLevel = waveformData[i + 1];
-
-                if (i > waveMaxPointIndexes[currentPointIndex])
-                {
-                    waveformCompressedPoints[(currentPointIndex * 2)] = maxLeftPointLevel;
-                    waveformCompressedPoints[(currentPointIndex * 2) + 1] = maxRightPointLevel;
-                    maxLeftPointLevel = float.MinValue;
-                    maxRightPointLevel = float.MinValue;
-                    currentPointIndex++;
-                }
-                if (i % 1000 == 0)
-                {
-                    float[] clonedData = (float[])waveformCompressedPoints.Clone();
-                    App.Current.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        WaveformData = clonedData;
-                    }));
-                }
-
-                if (waveformRecompressWorker.CancellationPending)
-                {
-                    e.Cancel = true;
-                    break;
-                }
-            }
-            float[] finalClonedData = (float[])waveformCompressedPoints.Clone();
-            App.Current.Dispatcher.Invoke(new Action(() =>
-            {
-                fullLevelData = waveformData;
-                WaveformData = finalClonedData;
-            }));
-        }
         #endregion
 
         #region Private Utility Methods
@@ -448,7 +386,6 @@ namespace TestApp
             if (Bass.BASS_Init(-1, 44100, BASSInit.BASS_DEVICE_SPEAKERS, interopHelper.Handle))
             {
                 int pluginAAC = Bass.BASS_PluginLoad("bass_aac.dll");
-                int pluginFX = BassFx.BASS_FX_GetVersion();
 #if DEBUG
                 BASS_INFO info = new BASS_INFO();
                 Bass.BASS_GetInfo(info);
@@ -474,21 +411,15 @@ namespace TestApp
                 BASS_CHANNELINFO info = new BASS_CHANNELINFO();
                 Bass.BASS_ChannelGetInfo(ActiveStreamHandle, info);
             }
+            #if DEBUG
             else
             {
-#if DEBUG
-                Debug.WriteLine("Error={0}", Bass.BASS_ErrorGetCode());
-#endif
-            }
-        }
 
-        private void NotifyPropertyChanged(String info)
-        {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(info));
+                Debug.WriteLine("Error={0}", Bass.BASS_ErrorGetCode());
+
             }
-        }
+            #endif
+        }        
         #endregion
 
         #region Callbacks
@@ -500,35 +431,30 @@ namespace TestApp
         private void RepeatCallback(int handle, int channel, int data, IntPtr user)
         {
             App.Current.Dispatcher.BeginInvoke(new Action(() => ChannelPosition = repeatStartTime));
-        }        
-
-        private void BpmCallback(int channel, float percent)
-        {
-            App.Current.Dispatcher.BeginInvoke(new Action(() => BPMDecodePercent = percent));
         }
         #endregion
 
         #region Public Properties
         public int FileStreamHandle
         {
-            get { return streamHandle; }
+            get { return activeStreamHandle; }
             protected set
             {
-                int oldValue = streamHandle;
-                streamHandle = value;
-                if (oldValue != streamHandle)
+                int oldValue = activeStreamHandle;
+                activeStreamHandle = value;
+                if (oldValue != activeStreamHandle)
                     NotifyPropertyChanged("FileStreamHandle");
             }
         }
 
         public int ActiveStreamHandle
         {
-            get { return streamFXHandle; }
+            get { return activeStreamHandle; }
             protected set
             {
-                int oldValue = streamFXHandle;
-                streamFXHandle = value;
-                if (oldValue != streamFXHandle)
+                int oldValue = activeStreamHandle;
+                activeStreamHandle = value;
+                if (oldValue != activeStreamHandle)
                     NotifyPropertyChanged("ActiveStreamHandle");
             }
         }
@@ -589,7 +515,7 @@ namespace TestApp
                 bool oldValue = isOpeningFile;
                 isOpeningFile = value;
                 if (oldValue != isOpeningFile)
-                    NotifyPropertyChanged("IsOpeningFile");                
+                    NotifyPropertyChanged("IsOpeningFile");
             }
         }
 
@@ -603,100 +529,6 @@ namespace TestApp
                 if (oldValue != isPlaying)
                     NotifyPropertyChanged("IsPlaying");
                 positionTimer.IsEnabled = value;
-            }
-        }
-
-        public double ChannelLength
-        {
-            get { return channelLength; }
-            protected set
-            {
-                double oldValue = channelLength;
-                channelLength = value;
-                if (oldValue != channelLength)
-                    NotifyPropertyChanged("ChannelLength");
-            }
-        }
-
-        public double ChannelPosition
-        {
-            get { return currentChannelPosition; }
-            set
-            {                
-                if (!inChannelSet)
-                {
-                    inChannelSet = true; // Avoid recursion
-                    double oldValue = currentChannelPosition;
-                    double position = Math.Max(0, Math.Min(value, ChannelLength));
-                    if(!inChannelTimerUpdate)
-                        Bass.BASS_ChannelSetPosition(ActiveStreamHandle, Bass.BASS_ChannelSeconds2Bytes(ActiveStreamHandle, position));
-                    currentChannelPosition = position;
-                    if (oldValue != currentChannelPosition)
-                        NotifyPropertyChanged("ChannelPosition");
-                    inChannelSet = false;
-                }
-            }
-        }
-
-        public float OriginalBPM
-        {
-            get { return originalBpm; }
-            protected set
-            {
-                float oldValue = originalBpm;
-                originalBpm = value;
-                if (oldValue != originalBpm)
-                    NotifyPropertyChanged("OriginalBPM");
-            }
-        }
-
-        public float ActiveBPM
-        {
-            get { return activeBpm; }
-            protected set
-            {
-                float oldValue = activeBpm;
-                activeBpm = value;
-                if (oldValue != activeBpm)
-                    NotifyPropertyChanged("ActiveBPM");
-            }
-        }
-
-
-        public float BPMDecodePercent
-        {
-            get { return bpmDecodePercent; }
-            protected set
-            {
-                float oldValue = bpmDecodePercent;
-                bpmDecodePercent = value;
-                if (oldValue != bpmDecodePercent)
-                    NotifyPropertyChanged("BPMDecodePercent");
-            }            
-        }
-
-        public int WaveformCompressedPointCount
-        {
-            get { return waveformCompressedPointCount; }
-            set
-            {
-                int oldValue = waveformCompressedPointCount;
-                waveformCompressedPointCount = value;
-                if (oldValue != waveformCompressedPointCount)
-                    NotifyPropertyChanged("WaveformCompressedPointCount");
-                RecompressWaveformData();
-            }
-        }
-
-        public float[] WaveformData
-        {
-            get { return waveformData; }
-            protected set
-            {
-                float[] oldValue = waveformData;
-                waveformData = value;
-                if (oldValue != waveformData)
-                    NotifyPropertyChanged("WaveformData");
             }
         }
         #endregion
