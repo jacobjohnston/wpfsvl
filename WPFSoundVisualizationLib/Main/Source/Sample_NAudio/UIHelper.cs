@@ -7,7 +7,7 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 
-namespace TestApp
+namespace Sample_NAudio
 {
     public static class UIHelper
     {
@@ -34,28 +34,13 @@ namespace TestApp
             do
             {
                 T matchedParent = parent as T;
-                if(matchedParent != null)
+                if (matchedParent != null)
                     return matchedParent;
                 parent = VisualTreeHelper.GetParent(parent);
             }
-            while(parent != null);
+            while (parent != null);
 
             return null;
         }
-    }
-
-    public class HalfValueConverter : IValueConverter
-    {
-        #region IValueConverter Members
-        public object Convert(object value, System.Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            return (double)value / 2;
-        }
-
-        public object ConvertBack(object value, System.Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            return (double)value * 2;
-        }
-        #endregion
     }
 }

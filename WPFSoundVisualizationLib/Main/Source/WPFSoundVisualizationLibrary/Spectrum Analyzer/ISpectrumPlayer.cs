@@ -30,9 +30,10 @@ namespace WPFSoundVisualizationLib
         /// Assigns current FFT data to a buffer.
         /// </summary>
         /// <remarks>
-        /// The FFT data in the buffer should consist only of the real number values. The spectrum
-        /// analyzer does not use the imaginary number portion of FFT results. If your FFT algorithm
-        /// returns complex numbers, make sure to trim out the imaginary number data.
+        /// The FFT data in the buffer should consist only of the real number intensity values. This means that if your FFT algorithm returns
+        /// complex numbers (as many do), you'd run an algorithm similar to:
+        /// for(int i = 0; i &lt; complexNumbers.Length / 2; i++)
+        ///     fftResult[i] = Math.Sqrt(complexNumbers[i].Real * complexNumbers[i].Real + complexNumbers[i].Imaginary * complexNumbers[i].Imaginary);
         /// </remarks>
         /// <param name="fftDataBuffer">The buffer to copy FFT data. The buffer should consist of only non-imaginary numbers.</param>
         /// <returns>True if data was written to the buffer, otherwise false.</returns>

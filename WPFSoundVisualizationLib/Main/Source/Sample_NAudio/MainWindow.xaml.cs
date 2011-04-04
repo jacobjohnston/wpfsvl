@@ -4,9 +4,8 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
-using System.Windows.Media;
 
-namespace TestApp
+namespace Sample_NAudio
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -15,25 +14,25 @@ namespace TestApp
     {
         public MainWindow()
         {
-            InitializeComponent();            
+            InitializeComponent();
 
-            BassEngine bassEngine = BassEngine.Instance;
+            NAudioEngine soundEngine = NAudioEngine.Instance;
+            soundEngine.PropertyChanged += NAudioEngine_PropertyChanged;
 
-            bassEngine.PropertyChanged += BassEngine_PropertyChanged;
-            UIHelper.Bind(bassEngine, "CanStop", StopButton, Button.IsEnabledProperty);
-            UIHelper.Bind(bassEngine, "CanPlay", PlayButton, Button.IsEnabledProperty);
-            UIHelper.Bind(bassEngine, "CanPause", PauseButton, Button.IsEnabledProperty);            
+            UIHelper.Bind(soundEngine, "CanStop", StopButton, Button.IsEnabledProperty);
+            UIHelper.Bind(soundEngine, "CanPlay", PlayButton, Button.IsEnabledProperty);
+            UIHelper.Bind(soundEngine, "CanPause", PauseButton, Button.IsEnabledProperty);
 
-            spectrumAnalyzer.RegisterSoundPlayer(bassEngine);
-            waveformTimeline.RegisterSoundPlayer(bassEngine);
+            spectrumAnalyzer.RegisterSoundPlayer(soundEngine);
+            waveformTimeline.RegisterSoundPlayer(soundEngine);
 
             LoadExpressionDarkTheme();
         }
 
-        #region Bass Engine Events
-        private void BassEngine_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        #region NAudio Engine Events
+        private void NAudioEngine_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            BassEngine engine = BassEngine.Instance;
+            NAudioEngine engine = NAudioEngine.Instance;
             switch (e.PropertyName)
             {
                 case "FileTag":
@@ -65,7 +64,7 @@ namespace TestApp
                         else
                         {
                             albumArtPanel.AlbumArtImage = null;
-                        }                        
+                        }
                     }
                     else
                     {
@@ -82,20 +81,20 @@ namespace TestApp
 
         private void PlayButton_Click(object sender, RoutedEventArgs e)
         {
-            if (BassEngine.Instance.CanPlay)
-                BassEngine.Instance.Play();
+            if (NAudioEngine.Instance.CanPlay)
+                NAudioEngine.Instance.Play();
         }
 
         private void PauseButton_Click(object sender, RoutedEventArgs e)
         {
-            if (BassEngine.Instance.CanPause)
-                BassEngine.Instance.Pause();
+            if (NAudioEngine.Instance.CanPause)
+                NAudioEngine.Instance.Pause();
         }
 
         private void StopButton_Click(object sender, RoutedEventArgs e)
         {
-            if (BassEngine.Instance.CanStop)
-                BassEngine.Instance.Stop();
+            if (NAudioEngine.Instance.CanStop)
+                NAudioEngine.Instance.Stop();
         }
 
         private void BrowseButton_Click(object sender, RoutedEventArgs e)
@@ -188,10 +187,10 @@ namespace TestApp
         private void OpenFile()
         {
             Microsoft.Win32.OpenFileDialog openDialog = new Microsoft.Win32.OpenFileDialog();
-            openDialog.Filter = "(*.mp3, *.m4a)|*.mp3;*.m4a";
+            openDialog.Filter = "(*.mp3)|*.mp3";
             if (openDialog.ShowDialog() == true)
             {
-                BassEngine.Instance.OpenFile(openDialog.FileName);
+                NAudioEngine.Instance.OpenFile(openDialog.FileName);
                 FileText.Text = openDialog.FileName;
             }
         }
@@ -204,6 +203,11 @@ namespace TestApp
         private void CloseMenuItem_Click(object sender, RoutedEventArgs e)
         {
             Close();
+        }
+
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            NAudioEngine.Instance.Dispose();
         }
     }
 }

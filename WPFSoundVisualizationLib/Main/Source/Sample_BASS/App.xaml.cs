@@ -5,7 +5,7 @@
 
 using System.Windows;
 
-namespace TestApp
+namespace Sample_BASS
 {
     /// <summary>
     /// Interaction logic for App.xaml
