@@ -220,7 +220,7 @@ namespace Sample_BASS
             if (System.IO.File.Exists(path))
             {
                 // Create Stream
-                FileStreamHandle = ActiveStreamHandle = Bass.BASS_StreamCreateFile(path, 0, 0, BASSFlag.BASS_STREAM_DECODE | BASSFlag.BASS_SAMPLE_FLOAT | BASSFlag.BASS_STREAM_PRESCAN);
+                FileStreamHandle = ActiveStreamHandle = Bass.BASS_StreamCreateFile(path, 0, 0, BASSFlag.BASS_SAMPLE_FLOAT | BASSFlag.BASS_STREAM_PRESCAN);
                 ChannelLength = Bass.BASS_ChannelBytes2Seconds(FileStreamHandle, Bass.BASS_ChannelGetLength(FileStreamHandle, 0));
                 FileTag = TagLib.File.Create(path);
                 GenerateWaveformData(path);
@@ -390,7 +390,6 @@ namespace Sample_BASS
                 BASS_INFO info = new BASS_INFO();
                 Bass.BASS_GetInfo(info);
                 Debug.WriteLine(info.ToString());
-                Debug.WriteLine("FX Plugin ID: {0}", pluginFX);
                 BASS_PLUGININFO aacInfo = Bass.BASS_PluginGetInfo(pluginAAC);
                 foreach (BASS_PLUGINFORM f in aacInfo.formats)
                     Debug.WriteLine("Type={0}, Name={1}, Exts={2}", f.ctype, f.name, f.exts);
