@@ -62,6 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Album Art Display\AlbumArtDisplay.cs" />
+    <Compile Include="FFTDataSize.cs" />
     <Compile Include="ISoundPlayer.cs" />
     <Compile Include="Spectrum Analyzer\BarHeightScalingStyles.cs" />
     <Compile Include="Spectrum Analyzer\ISpectrumPlayer.cs" />

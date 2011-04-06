@@ -20,7 +20,8 @@ namespace Sample_BASS
         #region Fields
         private static BassEngine instance;
         private readonly DispatcherTimer positionTimer = new DispatcherTimer(DispatcherPriority.ApplicationIdle);
-        private readonly int maxFFT = (int)(BASSData.BASS_DATA_AVAILABLE | BASSData.BASS_DATA_FFT4096);
+        private readonly int fftDataSize = (int)FFTDataSize.FFT2048;
+        private readonly int maxFFT = (int)(BASSData.BASS_DATA_AVAILABLE | BASSData.BASS_DATA_FFT2048);
         private readonly BackgroundWorker waveformGenerateWorker = new BackgroundWorker();
         private readonly SYNCPROC endTrackSyncProc;
         private readonly SYNCPROC repeatSyncProc;
@@ -63,7 +64,7 @@ namespace Sample_BASS
         #region ISpectrumPlayer
         public int GetFFTFrequencyIndex(int frequency)
         {
-            return Utils.FFTFrequency2Index(frequency, 4096, sampleFrequency);
+            return Utils.FFTFrequency2Index(frequency, fftDataSize, sampleFrequency);
         }
 
         public bool GetFFTData(float[] fftDataBuffer)
