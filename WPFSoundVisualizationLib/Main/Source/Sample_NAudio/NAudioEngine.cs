@@ -18,6 +18,7 @@ namespace Sample_NAudio
         private static NAudioEngine instance;
         private readonly DispatcherTimer positionTimer = new DispatcherTimer(DispatcherPriority.ApplicationIdle);
         private readonly BackgroundWorker waveformGenerateWorker = new BackgroundWorker();
+        private readonly int fftDataSize = (int)FFTDataSize.FFT2048;
         private bool disposed;
         private bool canPlay;
         private bool canPause;
@@ -103,7 +104,7 @@ namespace Sample_NAudio
                 maxFrequency = ActiveStream.WaveFormat.SampleRate / 2.0d;
             else
                 maxFrequency = 22050; // Assume a default 44.1 kHz sample rate.
-            return (int)((frequency / maxFrequency) * 2048);
+            return (int)((frequency / maxFrequency) * (fftDataSize / 2));
         }
         #endregion
 
@@ -219,7 +220,7 @@ namespace Sample_NAudio
             WaveChannel32 waveformInputStream = new WaveChannel32(waveformMp3Stream);            
             waveformInputStream.Sample += waveStream_Sample;
             
-            int frameLength = 4096;
+            int frameLength = fftDataSize;
             int frameCount = (int)((double)waveformInputStream.Length / (double)frameLength);
             int waveformLength = frameCount * 2;
             byte[] readBuffer = new byte[frameLength];
@@ -369,7 +370,7 @@ namespace Sample_NAudio
                     };
                     ActiveStream = new Mp3FileReader(path);
                     inputStream = new WaveChannel32(ActiveStream);
-                    sampleAggregator = new SampleAggregator(4096);
+                    sampleAggregator = new SampleAggregator(fftDataSize);
                     inputStream.Sample += inputStream_Sample;
                     waveOutDevice.Init(inputStream);
                     ChannelLength = inputStream.TotalTime.TotalSeconds;

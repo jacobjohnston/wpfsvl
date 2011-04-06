@@ -15,10 +15,14 @@ namespace Sample_NAudio
         private float volumeRightMaxValue;
         private float volumeRightMinValue;
         private Complex[] channelData;
+        private int bufferSize;
+        private int binaryExponentitation;
         private int channelDataPosition;
 
         public SampleAggregator(int bufferSize)
         {
+            this.bufferSize = bufferSize;
+            binaryExponentitation = (int)Math.Log(bufferSize, 2);
             channelData = new Complex[bufferSize];
         }
 
@@ -66,11 +70,10 @@ namespace Sample_NAudio
         /// </summary>
         /// <param name="fftBuffer">A buffer where the FFT data will be stored.</param>
         public void GetFFTResults(float[] fftBuffer)
-        {            
-            Complex[] channelDataClone = new Complex[4096];
+        {
+            Complex[] channelDataClone = new Complex[bufferSize];
             channelData.CopyTo(channelDataClone, 0);
-            // 4096 = 2^12
-            FastFourierTransform.FFT(true, 12, channelDataClone);
+            FastFourierTransform.FFT(true, binaryExponentitation, channelDataClone);
             for (int i = 0; i < channelDataClone.Length / 2; i++)
             {
                 // Calculate actual intensities for the FFT results.

@@ -674,6 +674,7 @@ namespace WPFSoundVisualizationLib
         /// <summary>
         /// Gets or sets a style with which to draw the falling peaks on the spectrum analyzer.
         /// </summary>
+        [Category("Common")]
         public Style PeakStyle
         {
             // IMPORTANT: To maintain parity between setting a property in XAML and procedural code, do not touch the getter and setter inside this dependency property!
@@ -796,6 +797,7 @@ namespace WPFSoundVisualizationLib
         /// <remarks>
         /// The valid range of the interval is 10 milliseconds to 1000 milliseconds.
         /// </remarks>
+        [Category("Common")]
         public int RefreshInterval
         {
             // IMPORTANT: To maintain parity between setting a property in XAML and procedural code, do not touch the getter and setter inside this dependency property!
@@ -809,6 +811,68 @@ namespace WPFSoundVisualizationLib
             }
         }               
         #endregion
+
+        #region FFTComplexity
+        /// <summary>
+        /// Identifies the <see cref="FFTComplexity" /> dependency property. 
+        /// </summary>
+        public static readonly DependencyProperty FFTComplexityProperty = DependencyProperty.Register("FFTComplexity", typeof(FFTDataSize), typeof(SpectrumAnalyzer), new UIPropertyMetadata(FFTDataSize.FFT2048, OnFFTComplexityChanged, OnCoerceFFTComplexity));
+
+        private static object OnCoerceFFTComplexity(DependencyObject o, object value)
+        {
+            SpectrumAnalyzer spectrumAnalyzer = o as SpectrumAnalyzer;
+            if (spectrumAnalyzer != null)
+                return spectrumAnalyzer.OnCoerceFFTComplexity((FFTDataSize)value);
+            else
+                return value;
+        }
+
+        private static void OnFFTComplexityChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)
+        {
+            SpectrumAnalyzer spectrumAnalyzer = o as SpectrumAnalyzer;
+            if (spectrumAnalyzer != null)
+                spectrumAnalyzer.OnFFTComplexityChanged((FFTDataSize)e.OldValue, (FFTDataSize)e.NewValue);
+        }
+
+        /// <summary>
+        /// Coerces the value of <see cref="FFTComplexity"/> when a new value is applied.
+        /// </summary>
+        /// <param name="value">The value that was set on <see cref="FFTComplexity"/></param>
+        /// <returns>The adjusted value of <see cref="FFTComplexity"/></returns>
+        protected virtual FFTDataSize OnCoerceFFTComplexity(FFTDataSize value)
+        {            
+            return value;
+        }
+
+        /// <summary>
+        /// Called after the <see cref="FFTComplexity"/> value has changed.
+        /// </summary>
+        /// <param name="oldValue">The previous value of <see cref="FFTComplexity"/></param>
+        /// <param name="newValue">The new value of <see cref="FFTComplexity"/></param>
+        protected virtual void OnFFTComplexityChanged(FFTDataSize oldValue, FFTDataSize newValue)
+        {
+            channelData = new float[((int)newValue / 2)];
+        }
+
+        /// <summary>
+        /// Gets or sets the complexity of FFT results the Spectrum Analyzer expects. Larger values
+        /// will be more accurate at converting time domain data to frequency data, but slower.
+        /// </summary>
+        [Category("Common")]
+        public FFTDataSize FFTComplexity
+        {
+            // IMPORTANT: To maintain parity between setting a property in XAML and procedural code, do not touch the getter and setter inside this dependency property!
+            get
+            {
+                return (FFTDataSize)GetValue(FFTComplexityProperty);
+            }
+            set
+            {
+                SetValue(FFTComplexityProperty, value);
+            }
+        }
+        #endregion
+
         #endregion
 
         #region Template Overrides
