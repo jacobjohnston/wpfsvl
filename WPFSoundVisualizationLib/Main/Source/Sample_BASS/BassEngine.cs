@@ -375,7 +375,7 @@ namespace Sample_BASS
         #region Private Utility Methods
         private void Initialize()
         {
-            positionTimer.Interval = TimeSpan.FromMilliseconds(500);
+            positionTimer.Interval = TimeSpan.FromMilliseconds(100);
             positionTimer.Tick += positionTimer_Tick;
 
             IsPlaying = false;

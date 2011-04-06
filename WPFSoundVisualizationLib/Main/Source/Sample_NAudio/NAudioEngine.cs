@@ -59,7 +59,7 @@ namespace Sample_NAudio
         #region Constructor
         private NAudioEngine()
         {
-            positionTimer.Interval = TimeSpan.FromMilliseconds(500);
+            positionTimer.Interval = TimeSpan.FromMilliseconds(100);
             positionTimer.Tick += positionTimer_Tick;
 
             waveformGenerateWorker.DoWork += waveformGenerateWorker_DoWork;
@@ -219,7 +219,7 @@ namespace Sample_NAudio
             WaveChannel32 waveformInputStream = new WaveChannel32(waveformMp3Stream);            
             waveformInputStream.Sample += waveStream_Sample;
             
-            int frameLength = (int)((20.0d / waveformInputStream.TotalTime.TotalMilliseconds) * waveformInputStream.Length); // Sample 20ms of data.
+            int frameLength = 4096;
             int frameCount = (int)((double)waveformInputStream.Length / (double)frameLength);
             int waveformLength = frameCount * 2;
             byte[] readBuffer = new byte[frameLength];
@@ -350,13 +350,14 @@ namespace Sample_NAudio
         public void OpenFile(string path)
         {
             Stop();
-            StopAndCloseStream();
 
             if (ActiveStream != null)
             {
                 ClearRepeatRange();
                 ChannelPosition = 0;
             }
+            
+            StopAndCloseStream();            
 
             if (System.IO.File.Exists(path))
             {
