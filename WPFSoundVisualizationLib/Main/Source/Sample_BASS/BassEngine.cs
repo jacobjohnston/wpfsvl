@@ -31,7 +31,6 @@ namespace Sample_BASS
         private bool canPlay;
         private bool canPause;
         private bool isPlaying;
-        private bool isOpeningFile;
         private bool canStop;
         private double channelLength;
         private double currentChannelPosition;
@@ -208,7 +207,6 @@ namespace Sample_BASS
 
         public bool OpenFile(string path)
         {
-            IsOpeningFile = true;
             Stop();
 
             if (ActiveStreamHandle != 0)
@@ -227,6 +225,7 @@ namespace Sample_BASS
                 GenerateWaveformData(path);
                 if (ActiveStreamHandle != 0)
                 {
+                    // Obtain the sample rate of the stream
                     BASS_CHANNELINFO info = new BASS_CHANNELINFO();
                     Bass.BASS_ChannelGetInfo(ActiveStreamHandle, info);
                     sampleFrequency = info.freq;
@@ -251,7 +250,6 @@ namespace Sample_BASS
                     CanPlay = false;
                 }
             }
-            IsOpeningFile = false;
             return false;
         }
         #endregion
@@ -408,15 +406,12 @@ namespace Sample_BASS
             // Play Stream
             if (ActiveStreamHandle != 0 && Bass.BASS_ChannelPlay(ActiveStreamHandle, false))
             {
-                BASS_CHANNELINFO info = new BASS_CHANNELINFO();
-                Bass.BASS_ChannelGetInfo(ActiveStreamHandle, info);
+                // Do nothing
             }
             #if DEBUG
             else
             {
-
                 Debug.WriteLine("Error={0}", Bass.BASS_ErrorGetCode());
-
             }
             #endif
         }        
@@ -504,18 +499,6 @@ namespace Sample_BASS
                 canStop = value;
                 if (oldValue != canStop)
                     NotifyPropertyChanged("CanStop");
-            }
-        }
-
-        public bool IsOpeningFile
-        {
-            get { return isOpeningFile; }
-            protected set
-            {
-                bool oldValue = isOpeningFile;
-                isOpeningFile = value;
-                if (oldValue != isOpeningFile)
-                    NotifyPropertyChanged("IsOpeningFile");
             }
         }
 
