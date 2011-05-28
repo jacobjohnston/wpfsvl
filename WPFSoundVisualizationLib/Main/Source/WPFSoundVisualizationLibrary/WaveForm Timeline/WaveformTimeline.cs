@@ -991,20 +991,38 @@ namespace WPFSoundVisualizationLib
             timelineBackgroundRegion.Width = timelineCanvas.RenderSize.Width;
             timelineBackgroundRegion.Height = timelineCanvas.RenderSize.Height;
 
-            if (soundPlayer.ChannelLength < 15.0d)
+            double minorTickDuration = 1.00d; // Major tick = 5 seconds, Minor tick = 1.00 second
+            double majorTickDuration = 5.00d;
+            if (soundPlayer.ChannelLength >= 120.0d) // Major tick = 1 minute, Minor tick = 15 seconds.
+            {
+                minorTickDuration = 15.0d;
+                majorTickDuration = 60.0d;
+            }
+            else if (soundPlayer.ChannelLength >= 60.0d) // Major tick = 30 seconds, Minor tick = 5.0 seconds.
+            {
+                minorTickDuration = 5.0d;
+                majorTickDuration = 30.0d;
+            }
+            else if (soundPlayer.ChannelLength >= 30.0d) // Major tick = 10 seconds, Minor tick = 2.0 seconds.
+            {
+                minorTickDuration = 2.0d;
+                majorTickDuration = 10.0d;
+            }
+
+            if (soundPlayer.ChannelLength < minorTickDuration)
                 return;
 
-            int quarterMinutes = (int)(soundPlayer.ChannelLength / 15.0d);
-            for (int i = 1; i <= quarterMinutes; i++)
+            int minorTickCount = (int)(soundPlayer.ChannelLength / minorTickDuration);
+            for (int i = 1; i <= minorTickCount; i++)
             {
                 Line timelineTick = new Line()
                 {
                     Stroke = TimelineTickBrush,
                     StrokeThickness = 1.0d
                 };
-                if (i % 4 == 0) // Draw Large Ticks and Timestamps at minute marks
+                if (i % (majorTickDuration / minorTickDuration) == 0) // Draw Large Ticks and Timestamps at minute marks
                 {
-                    double xLocation = ((i * 15) / soundPlayer.ChannelLength) * timelineCanvas.RenderSize.Width;
+                    double xLocation = ((i * minorTickDuration) / soundPlayer.ChannelLength) * timelineCanvas.RenderSize.Width;
 
                     bool drawTextBlock = false;
                     double lastTimestampEnd;
@@ -1033,7 +1051,7 @@ namespace WPFSoundVisualizationLib
                         if (isAtEndOfTimeline)
                             continue;
 
-                        TimeSpan timeSpan = TimeSpan.FromMinutes(i / 4);
+                        TimeSpan timeSpan = TimeSpan.FromSeconds(i * minorTickDuration);
                         TextBlock timestampText = new TextBlock()
                         {
                             Margin = new Thickness(xLocation + 2, 0, 0, 0),
@@ -1043,7 +1061,7 @@ namespace WPFSoundVisualizationLib
                             FontStretch = this.FontStretch,
                             FontSize = this.FontSize,
                             Foreground = this.Foreground,
-                            Text = string.Format("{0}:00", timeSpan.TotalMinutes)
+                            Text = (timeSpan.TotalHours >= 1.0d) ? string.Format(@"{0:hh\:mm\:ss}", timeSpan) : string.Format(@"{0:mm\:ss}", timeSpan)
                         };
                         timestampTextBlocks.Add(timestampText);
                         timelineCanvas.Children.Add(timestampText);
@@ -1059,7 +1077,7 @@ namespace WPFSoundVisualizationLib
                 }
                 else // Draw small ticks
                 {
-                    double xLocation = ((i * 15) / soundPlayer.ChannelLength) * timelineCanvas.RenderSize.Width;
+                    double xLocation = ((i * minorTickDuration) / soundPlayer.ChannelLength) * timelineCanvas.RenderSize.Width;
                     timelineTick.X1 = xLocation;
                     timelineTick.Y1 = bottomLoc;
                     timelineTick.X2 = xLocation;
