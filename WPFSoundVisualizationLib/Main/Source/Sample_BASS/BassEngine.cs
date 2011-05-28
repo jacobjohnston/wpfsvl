@@ -316,12 +316,14 @@ namespace Sample_BASS
             float[] waveformData = new float[waveformLength];
             float[] levels = new float[2];
 
-            int compressedPointCount = waveformParams.Points * 2;
+            int actualPoints = Math.Min(waveformParams.Points, frameCount);
+
+            int compressedPointCount = actualPoints * 2;
             float[] waveformCompressedPoints = new float[compressedPointCount];
             List<int> waveMaxPointIndexes = new List<int>();
-            for (int i = 1; i <= waveformParams.Points; i++)
+            for (int i = 1; i <= actualPoints; i++)            
             {
-                waveMaxPointIndexes.Add((int)Math.Round(waveformLength * ((double)i / (double)waveformParams.Points), 0));
+                waveMaxPointIndexes.Add((int)Math.Round(waveformLength * ((double)i / (double)actualPoints), 0));
             }
 
             float maxLeftPointLevel = float.MinValue;
@@ -374,7 +376,7 @@ namespace Sample_BASS
         #region Private Utility Methods
         private void Initialize()
         {
-            positionTimer.Interval = TimeSpan.FromMilliseconds(100);
+            positionTimer.Interval = TimeSpan.FromMilliseconds(50);
             positionTimer.Tick += positionTimer_Tick;
 
             IsPlaying = false;

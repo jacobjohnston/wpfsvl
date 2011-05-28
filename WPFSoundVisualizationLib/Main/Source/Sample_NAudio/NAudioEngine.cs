@@ -60,7 +60,7 @@ namespace Sample_NAudio
         #region Constructor
         private NAudioEngine()
         {
-            positionTimer.Interval = TimeSpan.FromMilliseconds(100);
+            positionTimer.Interval = TimeSpan.FromMilliseconds(50);
             positionTimer.Tick += positionTimer_Tick;
 
             waveformGenerateWorker.DoWork += waveformGenerateWorker_DoWork;
