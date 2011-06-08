@@ -37,12 +37,14 @@ namespace Sample_NAudio
         private float[] fullLevelData;
         private float[] waveformData;
         private TagLib.File fileTag;
-        private long repeatStart;
-        private long repeatEnd;
+        private TimeSpan repeatStart;
+        private TimeSpan repeatStop;
+        private bool inRepeatSet;
         #endregion
 
         #region Constants
         private const int waveformCompressedPointCount = 2000;
+        private const int repeatThreshold = 200;
         #endregion
 
         #region Singleton Pattern
@@ -109,17 +111,39 @@ namespace Sample_NAudio
         #endregion
 
         #region IWaveformPlayer
-        public void SetRepeatRange(double start, double stop)
+        public TimeSpan RepeatStart
         {
-            repeatStart = (long)((start / ActiveStream.TotalTime.TotalSeconds) * ActiveStream.Length);
-            repeatEnd = (long)((stop / ActiveStream.TotalTime.TotalSeconds) * ActiveStream.Length);
+            get { return repeatStart; }
+            set
+            {
+                if (!inRepeatSet)
+                {
+                    inRepeatSet = true;
+                    TimeSpan oldValue = repeatStart;
+                    repeatStart = value;
+                    if (oldValue != repeatStart)
+                        NotifyPropertyChanged("RepeatStart");
+                    inRepeatSet = false;
+                }
+            }
         }
 
-        public void ClearRepeatRange()
+        public TimeSpan RepeatStop
         {
-            repeatStart = -1;
-            repeatEnd = -1;
-        }
+            get { return repeatStop; }
+            set
+            {
+                if (!inChannelSet)
+                {
+                    inRepeatSet = true;
+                    TimeSpan oldValue = repeatStop;
+                    repeatStop = value;
+                    if (oldValue != repeatStop)
+                        NotifyPropertyChanged("RepeatStop");
+                    inRepeatSet = false;
+                }
+            }
+        }        
 
         public float[] WaveformData
         {
@@ -309,7 +333,7 @@ namespace Sample_NAudio
                 waveOutDevice.Dispose();
                 waveOutDevice = null;
             }
-        }
+        }        
         #endregion
 
         #region Public Methods
@@ -354,7 +378,8 @@ namespace Sample_NAudio
 
             if (ActiveStream != null)
             {
-                ClearRepeatRange();
+                RepeatStart = TimeSpan.Zero;
+                RepeatStop = TimeSpan.Zero;
                 ChannelPosition = 0;
             }
             
@@ -467,10 +492,12 @@ namespace Sample_NAudio
         private void inputStream_Sample(object sender, SampleEventArgs e)
         {
             sampleAggregator.Add(e.Left, e.Right);
-            if (repeatEnd != -1 && ActiveStream.Position >= repeatEnd)
+            long repeatStartPosition = (long)((RepeatStart.TotalSeconds / ActiveStream.TotalTime.TotalSeconds) * ActiveStream.Length);
+            long repeatStopPosition = (long)((RepeatStop.TotalSeconds / ActiveStream.TotalTime.TotalSeconds) * ActiveStream.Length);
+            if (((RepeatStop - RepeatStart) >= TimeSpan.FromMilliseconds(repeatThreshold)) && ActiveStream.Position >= repeatStopPosition)
             {
                 sampleAggregator.Clear();
-                ActiveStream.Position = repeatStart;
+                ActiveStream.Position = repeatStartPosition;
             }
         }
 
