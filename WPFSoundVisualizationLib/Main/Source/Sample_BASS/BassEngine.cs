@@ -38,13 +38,16 @@ namespace Sample_BASS
         private float[] waveformData;
         private bool inChannelSet;
         private bool inChannelTimerUpdate;
-        private int repeatSyncId;
-        private double repeatStartTime;
+        private int repeatSyncId;        
         private string pendingWaveformPath;
+        private TimeSpan repeatStart;
+        private TimeSpan repeatStop;
+        private bool inRepeatSet;
         #endregion
 
         #region Constants
         private const int waveformCompressedPointCount = 2000;
+        private const int repeatThreshold = 200;
         #endregion
 
         #region Constructor
@@ -73,28 +76,39 @@ namespace Sample_BASS
         #endregion
 
         #region IWaveformPlayer
-        public void SetRepeatRange(double startTime, double endTime)
+        public TimeSpan RepeatStart
         {
-            if (repeatSyncId != 0)
-                Bass.BASS_ChannelRemoveSync(ActiveStreamHandle, repeatSyncId);
-
-            long channelLength = Bass.BASS_ChannelGetLength(ActiveStreamHandle);
-            repeatStartTime = startTime;
-            long endPosition = (long)((endTime / ChannelLength) * channelLength);
-            repeatSyncId = Bass.BASS_ChannelSetSync(ActiveStreamHandle,
-                BASSSync.BASS_SYNC_POS,
-                (long)endPosition,
-                repeatSyncProc,
-                IntPtr.Zero);
+            get { return repeatStart; }
+            set
+            {
+                if (!inRepeatSet)
+                {
+                    inRepeatSet = true;
+                    TimeSpan oldValue = repeatStart;
+                    repeatStart = value;
+                    if (oldValue != repeatStart)
+                        NotifyPropertyChanged("RepeatStart");
+                    SetRepeatRange(value, RepeatStop);
+                    inRepeatSet = false;
+                }
+            }
         }
 
-        public void ClearRepeatRange()
+        public TimeSpan RepeatStop
         {
-            if (repeatSyncId != 0)
+            get { return repeatStop; }
+            set
             {
-                Bass.BASS_ChannelRemoveSync(ActiveStreamHandle, repeatSyncId);
-                repeatSyncId = 0;
-                repeatStartTime = 0;
+                if (!inChannelSet)
+                {
+                    inRepeatSet = true;
+                    TimeSpan oldValue = repeatStop;
+                    repeatStop = value;
+                    if (oldValue != repeatStop)
+                        NotifyPropertyChanged("RepeatStop");
+                    SetRepeatRange(RepeatStart, value);
+                    inRepeatSet = false;
+                }
             }
         }
 
@@ -170,7 +184,7 @@ namespace Sample_BASS
         #region Public Methods
         public void Stop()
         {
-            ChannelPosition = repeatStartTime;
+            ChannelPosition = RepeatStart.TotalSeconds;
             if (ActiveStreamHandle != 0)
             {
                 Bass.BASS_ChannelStop(ActiveStreamHandle);
@@ -403,6 +417,35 @@ namespace Sample_BASS
             }
         }
 
+        private void SetRepeatRange(TimeSpan startTime, TimeSpan endTime)
+        {
+            if (repeatSyncId != 0)
+                Bass.BASS_ChannelRemoveSync(ActiveStreamHandle, repeatSyncId);
+
+            if ((endTime - startTime) > TimeSpan.FromMilliseconds(repeatThreshold))
+            {
+                long channelLength = Bass.BASS_ChannelGetLength(ActiveStreamHandle);
+                long endPosition = (long)((endTime.TotalSeconds / ChannelLength) * channelLength);
+                repeatSyncId = Bass.BASS_ChannelSetSync(ActiveStreamHandle,
+                    BASSSync.BASS_SYNC_POS,
+                    (long)endPosition,
+                    repeatSyncProc,
+                    IntPtr.Zero);
+                ChannelPosition = RepeatStart.TotalSeconds;
+            }
+            else
+                ClearRepeatRange();
+        }
+
+        private void ClearRepeatRange()
+        {
+            if (repeatSyncId != 0)
+            {
+                Bass.BASS_ChannelRemoveSync(ActiveStreamHandle, repeatSyncId);
+                repeatSyncId = 0;
+            }
+        }
+
         private void PlayCurrentStream()
         {
             // Play Stream
@@ -427,7 +470,7 @@ namespace Sample_BASS
 
         private void RepeatCallback(int handle, int channel, int data, IntPtr user)
         {
-            App.Current.Dispatcher.BeginInvoke(new Action(() => ChannelPosition = repeatStartTime));
+            App.Current.Dispatcher.BeginInvoke(new Action(() => ChannelPosition = RepeatStart.TotalSeconds));
         }
         #endregion
 

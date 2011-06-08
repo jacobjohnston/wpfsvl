@@ -545,7 +545,10 @@ namespace WPFSoundVisualizationLib
         protected virtual void OnAllowRepeatRegionsChanged(bool oldValue, bool newValue)
         {
             if (!newValue && soundPlayer != null)
-                soundPlayer.ClearRepeatRange();
+            {
+                soundPlayer.RepeatStart = TimeSpan.Zero;
+                soundPlayer.RepeatStop = TimeSpan.Zero;
+            }
         }
 
         /// <summary>
@@ -777,6 +780,14 @@ namespace WPFSoundVisualizationLib
         {
             switch (e.PropertyName)
             {
+                case "RepeatStart":
+                    startLoopRegion = soundPlayer.RepeatStart.TotalSeconds;
+                    UpdateRepeatRegion();
+                    break;
+                case "RepeatStop":
+                    endLoopRegion = soundPlayer.RepeatStop.TotalSeconds;
+                    UpdateRepeatRegion();
+                    break;
                 case "WaveformData":
                     UpdateWaveform();
                     break;
@@ -786,7 +797,6 @@ namespace WPFSoundVisualizationLib
                 case "ChannelLength":
                     startLoopRegion = -1;
                     endLoopRegion = -1;
-                    soundPlayer.ClearRepeatRange();
                     UpdateAllRegions();
                     break;
             }
@@ -842,15 +852,17 @@ namespace WPFSoundVisualizationLib
 
             if (startLoopRegion == -1)
             {
-                soundPlayer.ClearRepeatRange();
+                soundPlayer.RepeatStart = TimeSpan.Zero;
+                soundPlayer.RepeatStop = TimeSpan.Zero;
                 double position = (currentPoint.X / RenderSize.Width) * soundPlayer.ChannelLength;
                 soundPlayer.ChannelPosition = Math.Min(soundPlayer.ChannelLength, Math.Max(0, position));
                 startLoopRegion = -1;
                 endLoopRegion = -1;
             }
             else
-            {
-                soundPlayer.SetRepeatRange(startLoopRegion, endLoopRegion);
+            {                
+                soundPlayer.RepeatStart = TimeSpan.FromSeconds(startLoopRegion);
+                soundPlayer.RepeatStop = TimeSpan.FromSeconds(endLoopRegion);
                 double position = startLoopRegion;
                 soundPlayer.ChannelPosition = Math.Min(soundPlayer.ChannelLength, Math.Max(0, position));
             }
@@ -953,17 +965,19 @@ namespace WPFSoundVisualizationLib
             if (soundPlayer == null || repeatCanvas == null)
                 return;
 
-            if (soundPlayer.ChannelLength == 0)
+            double startPercent = startLoopRegion / soundPlayer.ChannelLength;
+            double startXLocation = startPercent * repeatCanvas.RenderSize.Width;
+            double endPercent = endLoopRegion / soundPlayer.ChannelLength;
+            double endXLocation = endPercent * repeatCanvas.RenderSize.Width;
+
+            if (soundPlayer.ChannelLength == 0 || 
+                endXLocation <= startXLocation)
             {
                 repeatRegion.Width = 0;
                 repeatRegion.Height = 0;
                 return;
             }
-
-            double startPercent = startLoopRegion / soundPlayer.ChannelLength;
-            double startXLocation = startPercent * repeatCanvas.RenderSize.Width;
-            double endPercent = endLoopRegion / soundPlayer.ChannelLength;
-            double endXLocation = endPercent * repeatCanvas.RenderSize.Width;
+            
             repeatRegion.Margin = new Thickness(startXLocation, 0, 0, 0);
             repeatRegion.Width = endXLocation - startXLocation;
             repeatRegion.Height = repeatCanvas.RenderSize.Height;

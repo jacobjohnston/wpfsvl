@@ -19,6 +19,7 @@
 // DEALINGS IN THE SOFTWARE. 
 
 
+using System;
 namespace WPFSoundVisualizationLib
 {
     /// <summary>
@@ -49,15 +50,13 @@ namespace WPFSoundVisualizationLib
         float[] WaveformData { get; }
 
         /// <summary>
-        /// Sets a repeat range for the current sound stream.
+        /// Gets or sets the starting time for a section of repeat/looped audio.
         /// </summary>
-        /// <param name="startTime">The start time, in seconds, of the repeat range.</param>
-        /// <param name="endTime">The end time in seconds, of the repeat range.</param>
-        void SetRepeatRange(double startTime, double endTime);
+        TimeSpan RepeatStart { get; set; }
 
         /// <summary>
-        /// Clears any repeat range that is applied to the current sound stream.
+        /// Gets or sets the ending time for a section of repeat/looped audio.
         /// </summary>
-        void ClearRepeatRange();
+        TimeSpan RepeatStop { get; set; }
     }
 }
