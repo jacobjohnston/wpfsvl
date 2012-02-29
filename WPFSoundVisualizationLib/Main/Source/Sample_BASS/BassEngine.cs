@@ -76,7 +76,7 @@ namespace Sample_BASS
         #endregion
 
         #region IWaveformPlayer
-        public TimeSpan RepeatStart
+        public TimeSpan SelectionBegin
         {
             get { return repeatStart; }
             set
@@ -88,13 +88,13 @@ namespace Sample_BASS
                     repeatStart = value;
                     if (oldValue != repeatStart)
                         NotifyPropertyChanged("RepeatStart");
-                    SetRepeatRange(value, RepeatStop);
+                    SetRepeatRange(value, SelectionEnd);
                     inRepeatSet = false;
                 }
             }
         }
 
-        public TimeSpan RepeatStop
+        public TimeSpan SelectionEnd
         {
             get { return repeatStop; }
             set
@@ -106,7 +106,7 @@ namespace Sample_BASS
                     repeatStop = value;
                     if (oldValue != repeatStop)
                         NotifyPropertyChanged("RepeatStop");
-                    SetRepeatRange(RepeatStart, value);
+                    SetRepeatRange(SelectionBegin, value);
                     inRepeatSet = false;
                 }
             }
@@ -184,7 +184,7 @@ namespace Sample_BASS
         #region Public Methods
         public void Stop()
         {
-            ChannelPosition = RepeatStart.TotalSeconds;
+            ChannelPosition = SelectionBegin.TotalSeconds;
             if (ActiveStreamHandle != 0)
             {
                 Bass.BASS_ChannelStop(ActiveStreamHandle);
@@ -431,7 +431,7 @@ namespace Sample_BASS
                     (long)endPosition,
                     repeatSyncProc,
                     IntPtr.Zero);
-                ChannelPosition = RepeatStart.TotalSeconds;
+                ChannelPosition = SelectionBegin.TotalSeconds;
             }
             else
                 ClearRepeatRange();
@@ -470,7 +470,7 @@ namespace Sample_BASS
 
         private void RepeatCallback(int handle, int channel, int data, IntPtr user)
         {
-            App.Current.Dispatcher.BeginInvoke(new Action(() => ChannelPosition = RepeatStart.TotalSeconds));
+            App.Current.Dispatcher.BeginInvoke(new Action(() => ChannelPosition = SelectionBegin.TotalSeconds));
         }
         #endregion
 

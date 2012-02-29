@@ -111,7 +111,7 @@ namespace Sample_NAudio
         #endregion
 
         #region IWaveformPlayer
-        public TimeSpan RepeatStart
+        public TimeSpan SelectionBegin
         {
             get { return repeatStart; }
             set
@@ -128,7 +128,7 @@ namespace Sample_NAudio
             }
         }
 
-        public TimeSpan RepeatStop
+        public TimeSpan SelectionEnd
         {
             get { return repeatStop; }
             set
@@ -378,8 +378,8 @@ namespace Sample_NAudio
 
             if (ActiveStream != null)
             {
-                RepeatStart = TimeSpan.Zero;
-                RepeatStop = TimeSpan.Zero;
+                SelectionBegin = TimeSpan.Zero;
+                SelectionEnd = TimeSpan.Zero;
                 ChannelPosition = 0;
             }
             
@@ -492,9 +492,9 @@ namespace Sample_NAudio
         private void inputStream_Sample(object sender, SampleEventArgs e)
         {
             sampleAggregator.Add(e.Left, e.Right);
-            long repeatStartPosition = (long)((RepeatStart.TotalSeconds / ActiveStream.TotalTime.TotalSeconds) * ActiveStream.Length);
-            long repeatStopPosition = (long)((RepeatStop.TotalSeconds / ActiveStream.TotalTime.TotalSeconds) * ActiveStream.Length);
-            if (((RepeatStop - RepeatStart) >= TimeSpan.FromMilliseconds(repeatThreshold)) && ActiveStream.Position >= repeatStopPosition)
+            long repeatStartPosition = (long)((SelectionBegin.TotalSeconds / ActiveStream.TotalTime.TotalSeconds) * ActiveStream.Length);
+            long repeatStopPosition = (long)((SelectionEnd.TotalSeconds / ActiveStream.TotalTime.TotalSeconds) * ActiveStream.Length);
+            if (((SelectionEnd - SelectionBegin) >= TimeSpan.FromMilliseconds(repeatThreshold)) && ActiveStream.Position >= repeatStopPosition)
             {
                 sampleAggregator.Clear();
                 ActiveStream.Position = repeatStartPosition;

@@ -52,11 +52,11 @@ namespace WPFSoundVisualizationLib
         /// <summary>
         /// Gets or sets the starting time for a section of repeat/looped audio.
         /// </summary>
-        TimeSpan RepeatStart { get; set; }
+        TimeSpan SelectionBegin { get; set; }
 
         /// <summary>
         /// Gets or sets the ending time for a section of repeat/looped audio.
         /// </summary>
-        TimeSpan RepeatStop { get; set; }
+        TimeSpan SelectionEnd { get; set; }
     }
 }
