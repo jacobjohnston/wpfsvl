@@ -62,11 +62,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Album Art Display\AlbumArtDisplay.cs" />
+    <Compile Include="Digital Clock\DigitalClock.cs" />
     <Compile Include="FFTDataSize.cs" />
     <Compile Include="ISoundPlayer.cs" />
     <Compile Include="Spectrum Analyzer\BarHeightScalingStyles.cs" />
     <Compile Include="Spectrum Analyzer\ISpectrumPlayer.cs" />
     <Compile Include="Spectrum Analyzer\SpectrumAnalyzer.cs" />
+    <Compile Include="Time Editor\TimeEditor.cs" />
     <Compile Include="WaveForm Timeline\WaveformTimeline.cs" />
     <Compile Include="WaveForm Timeline\IWaveformPlayer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">

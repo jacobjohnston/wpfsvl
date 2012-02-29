@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2011, Jacob Johnston 
+﻿// Copyright (C) 2011 - 2012, Jacob Johnston 
 //
 // Permission is hereby granted, free of charge, to any person obtaining a 
 // copy of this software and associated documentation files (the "Software"), 
@@ -61,7 +61,7 @@ namespace WPFSoundVisualizationLib
         private Point mouseDownPoint;
         private Point currentPoint;
         private double startLoopRegion = -1;
-        private double endLoopRegion = -1;
+        private double endLoopRegion = -1;        
         #endregion
 
         #region Constants
@@ -838,35 +838,42 @@ namespace WPFSoundVisualizationLib
         /// <param name="e">The MouseButtonEventArgs that contains the event data. The event data reports that the left mouse button was released.</param>
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {
-            base.OnMouseLeftButtonUp(e);
-            ReleaseMouseCapture();
+            base.OnMouseLeftButtonUp(e);            
             if (!isMouseDown)
                 return;
 
+            bool updateRepeatRegion = false;
             isMouseDown = false;
+            ReleaseMouseCapture();
             if (Math.Abs(currentPoint.X - mouseDownPoint.X) < mouseMoveTolerance)
             {
-                startLoopRegion = -1;
-                endLoopRegion = -1;
-            }
-
-            if (startLoopRegion == -1)
-            {
-                soundPlayer.RepeatStart = TimeSpan.Zero;
-                soundPlayer.RepeatStop = TimeSpan.Zero;
-                double position = (currentPoint.X / RenderSize.Width) * soundPlayer.ChannelLength;
-                soundPlayer.ChannelPosition = Math.Min(soundPlayer.ChannelLength, Math.Max(0, position));
-                startLoopRegion = -1;
-                endLoopRegion = -1;
+                if (PointInRepeatRegion(mouseDownPoint))
+                {
+                    double position = (currentPoint.X / RenderSize.Width) * soundPlayer.ChannelLength;
+                    soundPlayer.ChannelPosition = Math.Min(soundPlayer.ChannelLength, Math.Max(0, position));
+                }
+                else
+                {
+                    soundPlayer.RepeatStart = TimeSpan.Zero;
+                    soundPlayer.RepeatStop = TimeSpan.Zero;
+                    double position = (currentPoint.X / RenderSize.Width) * soundPlayer.ChannelLength;
+                    soundPlayer.ChannelPosition = Math.Min(soundPlayer.ChannelLength, Math.Max(0, position));
+                    startLoopRegion = -1;
+                    endLoopRegion = -1;
+                    updateRepeatRegion = true;
+                }
             }
             else
-            {                
+            {
                 soundPlayer.RepeatStart = TimeSpan.FromSeconds(startLoopRegion);
                 soundPlayer.RepeatStop = TimeSpan.FromSeconds(endLoopRegion);
                 double position = startLoopRegion;
                 soundPlayer.ChannelPosition = Math.Min(soundPlayer.ChannelLength, Math.Max(0, position));
+                updateRepeatRegion = true;
             }
-            UpdateRepeatRegion();
+
+            if (updateRepeatRegion)
+                UpdateRepeatRegion();
         }
 
         /// <summary>
@@ -920,6 +927,17 @@ namespace WPFSoundVisualizationLib
             {
                 waveformCache.RenderAtScale = 1.0d;
             }
+        }
+
+        private bool PointInRepeatRegion(Point point)
+        {
+            if (soundPlayer.ChannelLength == 0)
+                return false;
+
+            double regionLeft = (soundPlayer.RepeatStart.TotalSeconds / soundPlayer.ChannelLength) * RenderSize.Width;
+            double regionRight = (soundPlayer.RepeatStop.TotalSeconds / soundPlayer.ChannelLength) * RenderSize.Width;
+
+            return (point.X >= regionLeft && point.X < regionRight);
         }
 
         private double GetTotalTransformScale()

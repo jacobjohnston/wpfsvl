@@ -68,10 +68,6 @@
     </ApplicationDefinition>
     <Compile Include="SampleAggregator.cs" />
     <Compile Include="UIHelper.cs" />
-    <Page Include="DarkBlue.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
     <Page Include="ExpressionDark.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
