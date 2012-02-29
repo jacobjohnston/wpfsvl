@@ -4,6 +4,8 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
+using WPFSoundVisualizationLib;
+using System.Windows.Data;
 
 namespace Sample_NAudio
 {
@@ -22,6 +24,8 @@ namespace Sample_NAudio
             UIHelper.Bind(soundEngine, "CanStop", StopButton, Button.IsEnabledProperty);
             UIHelper.Bind(soundEngine, "CanPlay", PlayButton, Button.IsEnabledProperty);
             UIHelper.Bind(soundEngine, "CanPause", PauseButton, Button.IsEnabledProperty);
+            UIHelper.Bind(soundEngine, "RepeatStart", repeatStartTimeEdit, TimeEditor.ValueProperty, BindingMode.TwoWay);
+            UIHelper.Bind(soundEngine, "RepeatStop", repeatStopTimeEdit, TimeEditor.ValueProperty, BindingMode.TwoWay);     
 
             spectrumAnalyzer.RegisterSoundPlayer(soundEngine);
             waveformTimeline.RegisterSoundPlayer(soundEngine);
@@ -71,6 +75,9 @@ namespace Sample_NAudio
                         albumArtPanel.AlbumArtImage = null;
                     }
                     break;
+                case "ChannelPosition":
+                    clockDisplay.Time = TimeSpan.FromSeconds(engine.ChannelPosition);
+                    break;   
                 default:
                     // Do Nothing
                     break;
@@ -106,8 +113,6 @@ namespace Sample_NAudio
         {
             DefaultThemeMenuItem.IsChecked = true;
             DefaultThemeMenuItem.IsEnabled = false;
-            DarkBlueThemeMenuItem.IsChecked = false;
-            DarkBlueThemeMenuItem.IsEnabled = true;
             ExpressionDarkMenuItem.IsChecked = false;
             ExpressionDarkMenuItem.IsEnabled = true;
             ExpressionLightMenuItem.IsChecked = false;
@@ -120,8 +125,6 @@ namespace Sample_NAudio
         {
             DefaultThemeMenuItem.IsChecked = false;
             DefaultThemeMenuItem.IsEnabled = true;
-            DarkBlueThemeMenuItem.IsChecked = true;
-            DarkBlueThemeMenuItem.IsEnabled = false;
             ExpressionDarkMenuItem.IsChecked = false;
             ExpressionDarkMenuItem.IsEnabled = true;
             ExpressionLightMenuItem.IsChecked = false;
@@ -136,8 +139,6 @@ namespace Sample_NAudio
         {
             DefaultThemeMenuItem.IsChecked = false;
             DefaultThemeMenuItem.IsEnabled = true;
-            DarkBlueThemeMenuItem.IsChecked = false;
-            DarkBlueThemeMenuItem.IsEnabled = true;
             ExpressionDarkMenuItem.IsChecked = true;
             ExpressionDarkMenuItem.IsEnabled = false;
             ExpressionLightMenuItem.IsChecked = false;
@@ -152,8 +153,6 @@ namespace Sample_NAudio
         {
             DefaultThemeMenuItem.IsChecked = false;
             DefaultThemeMenuItem.IsEnabled = true;
-            DarkBlueThemeMenuItem.IsChecked = false;
-            DarkBlueThemeMenuItem.IsEnabled = true;
             ExpressionDarkMenuItem.IsChecked = false;
             ExpressionDarkMenuItem.IsEnabled = true;
             ExpressionLightMenuItem.IsChecked = true;
@@ -167,11 +166,6 @@ namespace Sample_NAudio
         private void DefaultThemeMenuItem_Checked(object sender, RoutedEventArgs e)
         {
             LoadDefaultTheme();
-        }
-
-        private void DarkBlueThemeMenuItem_Checked(object sender, RoutedEventArgs e)
-        {
-            LoadDarkBlueTheme();
         }
 
         private void ExpressionDarkMenuItem_Checked(object sender, RoutedEventArgs e)

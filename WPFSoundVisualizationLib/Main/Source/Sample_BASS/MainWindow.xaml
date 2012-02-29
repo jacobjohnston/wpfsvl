@@ -9,11 +9,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:svl="clr-namespace:WPFSoundVisualizationLib;assembly=WPFSoundVisualizationLib"
         Title="WPFSVL Sample (BASS.NET)"
-        Height="382"
+        Height="482"
         Width="681">
     <Grid Background="{DynamicResource WindowBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="100" />
             <RowDefinition Height="*" />
             <RowDefinition Height="100" />
             <RowDefinition Height="40" />
@@ -38,10 +39,6 @@
                           Header="Default (No Theme)"
                           IsCheckable="True"
                           Checked="DefaultThemeMenuItem_Checked" />
-                <MenuItem Name="DarkBlueThemeMenuItem"
-                          Header="Dark Blue"
-                          IsCheckable="True"
-                          Checked="DarkBlueThemeMenuItem_Checked" />
                 <MenuItem Name="ExpressionDarkMenuItem"
                           Header="Expression Dark"
                           IsCheckable="True"
@@ -52,20 +49,42 @@
                           Checked="ExpressionLightMenuItem_Checked" />
             </MenuItem>
         </Menu>
+        <svl:DigitalClock Grid.Row="1"
+                          Grid.ColumnSpan="2"
+                          x:Name="clockDisplay"
+                          ShowHours="False"
+                          ShowSubSeconds="True"
+                          HorizontalAlignment="Center"
+                          Margin="5" />
         <svl:AlbumArtDisplay Grid.Column="0"
-                             Grid.Row="1"
+                             Grid.Row="2"
                              x:Name="albumArtPanel"
                              Margin="5" />
         <svl:SpectrumAnalyzer Grid.Column="1"
-                              Grid.Row="1"
+                              Grid.Row="2"
                               x:Name="spectrumAnalyzer"
                               Margin="5" />
-        <svl:WaveformTimeline Grid.Row="2"
-                              Grid.ColumnSpan="2"
-                              x:Name="waveformTimeline"
-                              Margin="5"
-                              BorderThickness="1" />
         <Grid Grid.Row="3"
+              Grid.ColumnSpan="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="100" />
+            </Grid.ColumnDefinitions>
+            <svl:WaveformTimeline x:Name="waveformTimeline"
+                                  Margin="5"
+                                  BorderThickness="1" />
+            <StackPanel Orientation="Vertical"
+                        VerticalAlignment="Center"
+                        Grid.Column="1">
+                <svl:TimeEditor Margin="5"
+                                Name="repeatStartTimeEdit"
+                                IsReadOnly="True" />
+                <svl:TimeEditor Margin="5"
+                                Name="repeatStopTimeEdit"
+                                IsReadOnly="True" />
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="4"
               Grid.ColumnSpan="2"
               Margin="5">
             <Grid.ColumnDefinitions>

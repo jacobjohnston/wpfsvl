@@ -13,17 +13,34 @@ namespace Sample_NAudio
     {
         public static void Bind(object dataSource, string sourcePath, FrameworkElement destinationObject, DependencyProperty dp)
         {
-            Bind(dataSource, sourcePath, destinationObject, dp, null);
+            Bind(dataSource, sourcePath, destinationObject, dp, null, BindingMode.Default, null);
+        }
+
+        public static void Bind(object dataSource, string sourcePath, FrameworkElement destinationObject, DependencyProperty dp, BindingMode bindingMode)
+        {
+            Bind(dataSource, sourcePath, destinationObject, dp, null, bindingMode, null);
         }
 
         public static void Bind(object dataSource, string sourcePath, FrameworkElement destinationObject, DependencyProperty dp, string stringFormat)
+        {
+            Bind(dataSource, sourcePath, destinationObject, dp, stringFormat, BindingMode.Default, null);
+        }
+
+        public static void Bind(object dataSource, string sourcePath, FrameworkElement destinationObject, DependencyProperty dp, string stringFormat, BindingMode bindingMode)
+        {
+            Bind(dataSource, sourcePath, destinationObject, dp, stringFormat, bindingMode, null);
+        }
+
+        public static void Bind(object dataSource, string sourcePath, FrameworkElement destinationObject, DependencyProperty dp, string stringFormat, BindingMode bindingMode, IValueConverter converter)
         {
             Binding binding = new Binding
             {
                 Source = dataSource,
                 UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
+                Mode = bindingMode,
                 Path = new PropertyPath(sourcePath),
-                StringFormat = stringFormat
+                StringFormat = stringFormat,
+                Converter = converter
             };
             destinationObject.SetBinding(dp, binding);
         }
