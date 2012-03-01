@@ -30,7 +30,7 @@ using System.Windows.Shapes;
 namespace WPFSoundVisualizationLib
 {
     /// <summary>
-    /// Represents a control that displays a stereo waveform and
+    /// A control that displays a stereo waveform and
     /// allows a user to change playback position.
     /// </summary>
     [DisplayName("Waveform Timeline")]
@@ -780,11 +780,11 @@ namespace WPFSoundVisualizationLib
         {
             switch (e.PropertyName)
             {
-                case "RepeatStart":
+                case "SelectionBegin":
                     startLoopRegion = soundPlayer.SelectionBegin.TotalSeconds;
                     UpdateRepeatRegion();
                     break;
-                case "RepeatStop":
+                case "SelectionEnd":
                     endLoopRegion = soundPlayer.SelectionEnd.TotalSeconds;
                     UpdateRepeatRegion();
                     break;

@@ -157,7 +157,7 @@
     <!-- Region: TimeEditor -->
     <Style TargetType="{x:Type local:TimeEditor}">
         <Setter Property="FocusVisualStyle"
-                Value="{x:Null}" />        
+                Value="{x:Null}" />
         <Setter Property="Foreground"
                 Value="Black" />
         <Setter Property="Background"
@@ -375,9 +375,9 @@
                         <LinearGradientBrush x:Key="DigitBrush"
                                              EndPoint="0,0"
                                              StartPoint="0,1">
-                            <GradientStop Color="#3B6A97"
+                            <GradientStop Color="#3c993b"
                                           Offset="0" />
-                            <GradientStop Color="#39A9FF"
+                            <GradientStop Color="#43d33a"
                                           Offset="1" />
                         </LinearGradientBrush>
 
@@ -1059,5 +1059,58 @@
         </Setter>
     </Style>
     <!-- EndRegion: DigitalClock -->
-    
+
+    <!-- Region: Equalizer -->
+    <Style TargetType="{x:Type local:Equalizer}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type local:Equalizer}">
+                    <ControlTemplate.Resources>
+                        <!-- Region Slider -->
+                        <Style x:Key="EqualizerSliderThumb"
+                               TargetType="{x:Type Thumb}"
+                               BasedOn="{StaticResource {x:Type Thumb}}">
+                            <Setter Property="SnapsToDevicePixels"
+                                    Value="true" />
+                        </Style>
+                        <Style TargetType="{x:Type Slider}"
+                               x:Key="EqualizerSlider"
+                               BasedOn="{StaticResource {x:Type Slider}}">
+                            <Setter Property="Orientation"
+                                    Value="Vertical" />
+                            <Setter Property="HorizontalAlignment"
+                                    Value="Center" />
+                        </Style>
+                        <!-- EndRegion -->
+                    </ControlTemplate.Resources>
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}">
+                        <Grid Name="MainGrid">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="30" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Name="LowText"
+                                       Text="Low"                                       
+                                       Margin="10,2,2,2"
+                                       HorizontalAlignment="Left" />
+                            <TextBlock Name="MidText"
+                                       Text="Mid"                                       
+                                       Margin="2"
+                                       HorizontalAlignment="Center" />
+                            <TextBlock Name="HighText"
+                                       Text="High"                                       
+                                       Margin="2,2,10,2"
+                                       HorizontalAlignment="Right" />
+                            <Grid Name="PART_EqualizerGrid"
+                                  Grid.Row="1" />
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <!-- EndRegion: Equalizer -->
+
 </ResourceDictionary>

@@ -63,6 +63,7 @@
   <ItemGroup>
     <Compile Include="Album Art Display\AlbumArtDisplay.cs" />
     <Compile Include="Digital Clock\DigitalClock.cs" />
+    <Compile Include="Equalizer\Equalizer.cs" />
     <Compile Include="FFTDataSize.cs" />
     <Compile Include="ISoundPlayer.cs" />
     <Compile Include="Spectrum Analyzer\BarHeightScalingStyles.cs" />
@@ -119,6 +120,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Album Art Display\WPFSoundVisualizationLib.AlbumArtDisplay.Icon.Large.png" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -24,8 +24,8 @@ namespace Sample_NAudio
             UIHelper.Bind(soundEngine, "CanStop", StopButton, Button.IsEnabledProperty);
             UIHelper.Bind(soundEngine, "CanPlay", PlayButton, Button.IsEnabledProperty);
             UIHelper.Bind(soundEngine, "CanPause", PauseButton, Button.IsEnabledProperty);
-            UIHelper.Bind(soundEngine, "RepeatStart", repeatStartTimeEdit, TimeEditor.ValueProperty, BindingMode.TwoWay);
-            UIHelper.Bind(soundEngine, "RepeatStop", repeatStopTimeEdit, TimeEditor.ValueProperty, BindingMode.TwoWay);     
+            UIHelper.Bind(soundEngine, "SelectionBegin", repeatStartTimeEdit, TimeEditor.ValueProperty, BindingMode.TwoWay);
+            UIHelper.Bind(soundEngine, "SelectionEnd", repeatStopTimeEdit, TimeEditor.ValueProperty, BindingMode.TwoWay);     
 
             spectrumAnalyzer.RegisterSoundPlayer(soundEngine);
             waveformTimeline.RegisterSoundPlayer(soundEngine);

@@ -32,7 +32,7 @@ using System.Windows.Media.Imaging;
 namespace WPFSoundVisualizationLib
 {
     /// <summary>
-    /// Represents a control that displays album cover artwork
+    /// Displays album cover artwork
     /// with a CD Jewel Case overlay.
     /// </summary>
     [DisplayName("Album Art Display")]

@@ -23,13 +23,17 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.ComponentModel;
 
 namespace WPFSoundVisualizationLib
 {
     /// <summary>
-    /// Represents a control that displays a clock with 
+    /// A digital LED clock display control with 
     /// hours, minutes, seconds, and hundredths of a second.
     /// </summary>
+    [DisplayName("Digital Clock")]
+    [Description("Displays timespans as a digital LED clock.")]
+    [ToolboxItem(true)]   
     [TemplatePart(Name = "PART_ClockGrid", Type = typeof(Grid))]    
     public class DigitalClock : Control
     {

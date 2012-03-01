@@ -25,13 +25,17 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.ComponentModel;
 
 namespace WPFSoundVisualizationLib
 {
     /// <summary>
-    /// Represents a control that allows the user to
+    /// A control that allows the user to
     /// see and edit TimeSpans.
     /// </summary>
+    [DisplayName("Time Editor")]
+    [Description("Displays and edits time spans.")]
+    [ToolboxItem(true)]    
     [TemplatePart(Name = "PART_HoursTextBox", Type = typeof(TextBox)),
     TemplatePart(Name = "PART_MinutesTextBox", Type = typeof(TextBox)),
     TemplatePart(Name = "PART_SecondsTextBox", Type = typeof(TextBox)),

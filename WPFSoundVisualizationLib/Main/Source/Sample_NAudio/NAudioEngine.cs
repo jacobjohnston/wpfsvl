@@ -122,7 +122,7 @@ namespace Sample_NAudio
                     TimeSpan oldValue = repeatStart;
                     repeatStart = value;
                     if (oldValue != repeatStart)
-                        NotifyPropertyChanged("RepeatStart");
+                        NotifyPropertyChanged("SelectionBegin");
                     inRepeatSet = false;
                 }
             }
@@ -139,7 +139,7 @@ namespace Sample_NAudio
                     TimeSpan oldValue = repeatStop;
                     repeatStop = value;
                     if (oldValue != repeatStop)
-                        NotifyPropertyChanged("RepeatStop");
+                        NotifyPropertyChanged("SelectionEnd");
                     inRepeatSet = false;
                 }
             }
