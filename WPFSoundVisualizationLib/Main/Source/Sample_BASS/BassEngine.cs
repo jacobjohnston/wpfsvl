@@ -87,7 +87,7 @@ namespace Sample_BASS
                     TimeSpan oldValue = repeatStart;
                     repeatStart = value;
                     if (oldValue != repeatStart)
-                        NotifyPropertyChanged("RepeatStart");
+                        NotifyPropertyChanged("SelectionBegin");
                     SetRepeatRange(value, SelectionEnd);
                     inRepeatSet = false;
                 }
@@ -105,7 +105,7 @@ namespace Sample_BASS
                     TimeSpan oldValue = repeatStop;
                     repeatStop = value;
                     if (oldValue != repeatStop)
-                        NotifyPropertyChanged("RepeatStop");
+                        NotifyPropertyChanged("SelectionEnd");
                     SetRepeatRange(SelectionBegin, value);
                     inRepeatSet = false;
                 }

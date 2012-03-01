@@ -25,8 +25,8 @@ namespace Sample_BASS
             UIHelper.Bind(bassEngine, "CanStop", StopButton, Button.IsEnabledProperty);
             UIHelper.Bind(bassEngine, "CanPlay", PlayButton, Button.IsEnabledProperty);
             UIHelper.Bind(bassEngine, "CanPause", PauseButton, Button.IsEnabledProperty);
-            UIHelper.Bind(bassEngine, "RepeatStart", repeatStartTimeEdit, TimeEditor.ValueProperty, BindingMode.TwoWay);
-            UIHelper.Bind(bassEngine, "RepeatStop", repeatStopTimeEdit, TimeEditor.ValueProperty, BindingMode.TwoWay);            
+            UIHelper.Bind(bassEngine, "SelectionBegin", repeatStartTimeEdit, TimeEditor.ValueProperty, BindingMode.TwoWay);
+            UIHelper.Bind(bassEngine, "SelectionEnd", repeatStopTimeEdit, TimeEditor.ValueProperty, BindingMode.TwoWay);            
 
             spectrumAnalyzer.RegisterSoundPlayer(bassEngine);
             waveformTimeline.RegisterSoundPlayer(bassEngine);

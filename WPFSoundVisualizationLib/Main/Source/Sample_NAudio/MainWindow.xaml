@@ -60,10 +60,18 @@
                              Grid.Row="2"
                              x:Name="albumArtPanel"
                              Margin="5" />
-        <svl:SpectrumAnalyzer Grid.Column="1"
-                              Grid.Row="2"
-                              x:Name="spectrumAnalyzer"
-                              Margin="5" />
+        <Grid Grid.Column="1"
+              Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <svl:SpectrumAnalyzer x:Name="spectrumAnalyzer"
+                                  Margin="5"
+                                  BarCount="16" />
+            <svl:Equalizer NumberOfBands="7"
+                           Grid.Column="1" />
+        </Grid>
         <Grid Grid.Row="3"
               Grid.ColumnSpan="2">
             <Grid.ColumnDefinitions>
