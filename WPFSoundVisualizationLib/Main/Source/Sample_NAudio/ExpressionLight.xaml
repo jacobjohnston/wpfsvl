@@ -10,7 +10,7 @@
                     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                     mc:Ignorable="d"
                     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-                    xmlns:svl="clr-namespace:WPFSoundVisualizationLib;assembly=WPFSoundVisualizationLib">    
+                    xmlns:svl="clr-namespace:WPFSoundVisualizationLib;assembly=WPFSoundVisualizationLib">
 
     <!-- Main Colors -->
 
@@ -1011,7 +1011,7 @@
                                   Data="F1 M 29.23,37.3796C 29.23,38.6369 28.2087,39.6582 26.9513,39.6582C 25.694,39.6582 24.6753,38.6369 24.6753,37.3796C 24.6753,36.1223 25.694,35.1036 26.9513,35.1036C 28.2087,35.1036 29.23,36.1223 29.23,37.3796 Z " />
                         </Canvas>
                     </ControlTemplate.Resources>
-                    <Border Background="{StaticResource ControlBackgroundBrush}"                            
+                    <Border Background="{StaticResource ControlBackgroundBrush}"
                             BorderBrush="DimGray"
                             BorderThickness="2"
                             CornerRadius="5">
@@ -1115,7 +1115,7 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBox Grid.Column="0"
                                                  Name="PART_HoursTextBox"
-                                                 Text="{Binding Hours}"
+                                                 Text="{TemplateBinding Hours}"
                                                  TextAlignment="Right"
                                                  CaretBrush="{TemplateBinding CaretBrush}"
                                                  Template="{DynamicResource TimeEdtiorTextBoxTemplate}" />
@@ -1128,7 +1128,7 @@
                                     <!-- Minutes -->
                                     <TextBox Grid.Column="1"
                                              Name="PART_MinutesTextBox"
-                                             Text="{Binding Minutes}"
+                                             Text="{TemplateBinding Minutes}"
                                              TextAlignment="Right"
                                              CaretBrush="{TemplateBinding CaretBrush}"
                                              Template="{DynamicResource TimeEdtiorTextBoxTemplate}" />
@@ -1139,7 +1139,7 @@
                                     <!-- Seconds -->
                                     <TextBox Grid.Column="3"
                                              Name="PART_SecondsTextBox"
-                                             Text="{Binding Seconds}"
+                                             Text="{TemplateBinding Seconds}"
                                              TextAlignment="Left"
                                              CaretBrush="{TemplateBinding CaretBrush}"
                                              Template="{DynamicResource TimeEdtiorTextBoxTemplate}" />

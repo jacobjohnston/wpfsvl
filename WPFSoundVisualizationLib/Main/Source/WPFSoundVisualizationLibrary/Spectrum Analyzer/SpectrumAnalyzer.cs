@@ -63,6 +63,7 @@ namespace WPFSoundVisualizationLib
         private const double minDBValue = -90;
         private const double maxDBValue = 0;
         private const double dbScale = (maxDBValue - minDBValue);
+        private const int defaultUpdateInterval = 25;
         #endregion
 
         #region Dependency Properties
@@ -752,7 +753,7 @@ namespace WPFSoundVisualizationLib
         /// <summary>
         /// Identifies the <see cref="RefreshInterval" /> dependency property. 
         /// </summary>
-        public static readonly DependencyProperty RefreshIntervalProperty = DependencyProperty.Register("RefreshInterval", typeof(int), typeof(SpectrumAnalyzer), new UIPropertyMetadata(25, OnRefreshIntervalChanged, OnCoerceRefreshInterval));
+        public static readonly DependencyProperty RefreshIntervalProperty = DependencyProperty.Register("RefreshInterval", typeof(int), typeof(SpectrumAnalyzer), new UIPropertyMetadata(defaultUpdateInterval, OnRefreshIntervalChanged, OnCoerceRefreshInterval));
 
         private static object OnCoerceRefreshInterval(DependencyObject o, object value)
         {
@@ -913,7 +914,7 @@ namespace WPFSoundVisualizationLib
         {
             animationTimer = new DispatcherTimer(DispatcherPriority.ApplicationIdle)
             {
-                Interval = TimeSpan.FromMilliseconds(25),
+                Interval = TimeSpan.FromMilliseconds(defaultUpdateInterval),
             };
             animationTimer.Tick += animationTimer_Tick;
         }

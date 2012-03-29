@@ -22,10 +22,10 @@
       <DocumentationSource sourceFile="WPFSoundVisualizationLib.csproj" xmlns="" />
     </DocumentationSources>
     <CopyrightText>Copyright &amp;#169%3b 2011-2012, Jacob Johnston</CopyrightText>
-    <CopyrightHref>http://inchoatethoughts.com</CopyrightHref>
+    <CopyrightHref>http://wpfsvl.codeplex.com</CopyrightHref>
     <FeedbackEMailAddress>jacobj%40inchoatethoughts.com</FeedbackEMailAddress>
     <FeedbackEMailLinkText>jacobj%40inchoatethoughts.com</FeedbackEMailLinkText>
-    <HelpTitle>Documentation For The WPF Sound Visualization Library</HelpTitle>
+    <HelpTitle>WPF Sound Visualization Library</HelpTitle>
     <Preliminary>False</Preliminary>
     <RootNamespaceContainer>True</RootNamespaceContainer>
     <HelpFileFormat>HtmlHelp1, MSHelpViewer</HelpFileFormat>
@@ -49,6 +49,7 @@
     <SccProvider>SAK</SccProvider>
     <SccAuxPath>SAK</SccAuxPath>
     <SccLocalPath>SAK</SccLocalPath>
+    <RootNamespaceTitle>WPF Sound Visualization Library</RootNamespaceTitle>
   </PropertyGroup>
   <!-- There are no properties for these groups.  AnyCPU needs to appear in
        order for Visual Studio to perform the build.  The others are optional

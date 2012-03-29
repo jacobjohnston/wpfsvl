@@ -39,7 +39,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <SignAssembly>false</SignAssembly>
+    <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>
@@ -70,6 +70,10 @@
     <Compile Include="Spectrum Analyzer\ISpectrumPlayer.cs" />
     <Compile Include="Spectrum Analyzer\SpectrumAnalyzer.cs" />
     <Compile Include="Time Editor\TimeEditor.cs" />
+    <Compile Include="Time Editor\TimeEditorAction.cs" />
+    <Compile Include="Time Editor\TimeEditorEventArgs.cs" />
+    <Compile Include="Time Editor\TimeEditorEventHandler.cs" />
+    <Compile Include="Time Editor\TimeEditorField.cs" />
     <Compile Include="WaveForm Timeline\WaveformTimeline.cs" />
     <Compile Include="WaveForm Timeline\IWaveformPlayer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">

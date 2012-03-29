@@ -19,13 +19,13 @@
 // DEALINGS IN THE SOFTWARE. 
 
 using System;
+using System.ComponentModel;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.ComponentModel;
 
 namespace WPFSoundVisualizationLib
 {
@@ -444,11 +444,15 @@ namespace WPFSoundVisualizationLib
         /// <param name="newValue">The new value of <see cref="Hours"/></param>
         protected virtual void OnHoursChanged(int oldValue, int newValue)
         {
+            if (updatingValue)
+                return;
+
             const int maxHours = 23;
             if (newValue > maxHours)
                 newValue = maxHours;
-
+            
             TimeSpan value = new TimeSpan(0, newValue, Minutes, (int)Seconds, ((int)(Seconds * 1000)) % 1000);
+            value = TimeSpan.FromSeconds(Math.Min(Math.Max(value.TotalSeconds, Minimum.TotalSeconds), Maximum.TotalSeconds));
             Value = value;
         }
 
@@ -508,11 +512,15 @@ namespace WPFSoundVisualizationLib
         /// <param name="newValue">The new value of <see cref="Minutes"/></param>
         protected virtual void OnMinutesChanged(int oldValue, int newValue)
         {
+            if (updatingValue)
+                return;
+
             const int maxMinutes = 59;
             if (newValue > maxMinutes)
                 newValue = maxMinutes;
 
             TimeSpan value = new TimeSpan(0, Hours, newValue, (int)Seconds, ((int)(Seconds * 1000)) % 1000);
+            value = TimeSpan.FromSeconds(Math.Min(Math.Max(value.TotalSeconds, Minimum.TotalSeconds), Maximum.TotalSeconds));
             Value = value;
         }
 
@@ -572,11 +580,15 @@ namespace WPFSoundVisualizationLib
         /// <param name="newValue">The new value of <see cref="Seconds"/></param>
         protected virtual void OnSecondsChanged(double oldValue, double newValue)
         {
+            if (updatingValue)
+                return;
+
             const double maxSeconds = 60.0d;
             if (newValue > maxSeconds)
                 newValue = maxSeconds - 0.01;
 
             TimeSpan value = new TimeSpan(0, Hours, Minutes, (int)newValue, ((int)(newValue * 1000)) % 1000);
+            value = TimeSpan.FromSeconds(Math.Min(Math.Max(value.TotalSeconds, Minimum.TotalSeconds), Maximum.TotalSeconds));
             Value = value;
         }
 
@@ -718,6 +730,32 @@ namespace WPFSoundVisualizationLib
         #endregion
         #endregion
 
+        #region Routed Events
+        #region Editing        
+        /// <summary>
+        /// Identifies the <see cref="Editing"/> routed event.
+        /// </summary>
+        public static readonly RoutedEvent EditingEvent = EventManager.RegisterRoutedEvent(
+            "Editing", RoutingStrategy.Bubble, typeof(TimeEditorEventHandler), typeof(TimeEditor));
+
+        /// <summary>
+        /// Occurs when the time editor's values are being edited.
+        /// </summary>
+        public event TimeEditorEventHandler Editing
+        {
+            add { AddHandler(EditingEvent, value); }
+            remove { RemoveHandler(EditingEvent, value); }
+        }
+
+        private TimeEditorEventArgs RaiseEditingEvent(TimeEditorAction action, TimeEditorField activeField)
+        {
+            TimeEditorEventArgs timeEditorArgs = new TimeEditorEventArgs(TimeEditor.EditingEvent, action, activeField);
+            RaiseEvent(timeEditorArgs);
+            return timeEditorArgs;
+        }
+        #endregion
+        #endregion
+
         #region Event Handlers
         #region Buttons
         private void SpinUpClick(object sender, RoutedEventArgs e)
@@ -725,13 +763,16 @@ namespace WPFSoundVisualizationLib
             switch (activeField)
             {
                 case TimeEditFields.Hours:
-                    IncrementHours();
+                    if(!RaiseEditingEvent(TimeEditorAction.UpPressed, TimeEditorField.Hours).Handled)
+                        IncrementHours();            
                     break;
                 case TimeEditFields.Minutes:
-                    IncrementMinutes();
+                    if (!RaiseEditingEvent(TimeEditorAction.UpPressed, TimeEditorField.Minutes).Handled)
+                        IncrementMinutes();
                     break;
                 case TimeEditFields.Seconds:
-                    IncrementSeconds();
+                    if (!RaiseEditingEvent(TimeEditorAction.UpPressed, TimeEditorField.Seconds).Handled)
+                        IncrementSeconds();
                     break;
             }
         }
@@ -741,13 +782,16 @@ namespace WPFSoundVisualizationLib
             switch (activeField)
             {
                 case TimeEditFields.Hours:
-                    DecrementHours();
+                    if (!RaiseEditingEvent(TimeEditorAction.DownPressed, TimeEditorField.Hours).Handled)
+                        DecrementHours();
                     break;
                 case TimeEditFields.Minutes:
-                    DecrementMinutes();
+                    if (!RaiseEditingEvent(TimeEditorAction.DownPressed, TimeEditorField.Minutes).Handled)
+                        DecrementMinutes();
                     break;
                 case TimeEditFields.Seconds:
-                    DecrementSeconds();
+                    if (!RaiseEditingEvent(TimeEditorAction.DownPressed, TimeEditorField.Seconds).Handled)
+                        DecrementSeconds();
                     break;
             }
         }
@@ -760,13 +804,18 @@ namespace WPFSoundVisualizationLib
             {
                 case Key.Enter:
                 case Key.Tab:
-                    ValidateHours();
+                    if (!RaiseEditingEvent(TimeEditorAction.ValueEntered, TimeEditorField.Hours).Handled)
+                        ValidateHours();
+                    else
+                        CopyValuesToTextBoxes();
                     break;
                 case Key.Up:
-                    IncrementHours();
+                    if (!RaiseEditingEvent(TimeEditorAction.UpPressed, TimeEditorField.Hours).Handled)
+                        IncrementHours();
                     break;
                 case Key.Down:
-                    DecrementHours();
+                    if (!RaiseEditingEvent(TimeEditorAction.DownPressed, TimeEditorField.Hours).Handled)
+                        DecrementHours();
                     break;
                 case Key.Right:
                     if (hoursTextBox.CaretIndex >= hoursTextBox.Text.Length && minutesTextBox != null)
@@ -777,8 +826,13 @@ namespace WPFSoundVisualizationLib
                     }
                     break;
                 case Key.Escape:
-                    ValidateHours();
-                    RemoveFocusToTop();
+                    if (!RaiseEditingEvent(TimeEditorAction.ValueEntered, TimeEditorField.Hours).Handled)
+                    {
+                        ValidateHours();
+                        RemoveFocusToTop();
+                    }
+                    else
+                        CopyValuesToTextBoxes();
                     break;
                 default:
                     // Do nothing
@@ -792,13 +846,18 @@ namespace WPFSoundVisualizationLib
             {
                 case Key.Enter:
                 case Key.Tab:
-                    ValidateMinutes();
+                    if (!RaiseEditingEvent(TimeEditorAction.ValueEntered, TimeEditorField.Minutes).Handled)
+                        ValidateMinutes();
+                    else
+                        CopyValuesToTextBoxes();
                     break;
                 case Key.Up:
-                    IncrementMinutes();
+                    if (!RaiseEditingEvent(TimeEditorAction.UpPressed, TimeEditorField.Minutes).Handled)
+                        IncrementMinutes();
                     break;
                 case Key.Down:
-                    DecrementMinutes();
+                    if (!RaiseEditingEvent(TimeEditorAction.DownPressed, TimeEditorField.Minutes).Handled)
+                        DecrementMinutes();
                     break;
                 case Key.Right:
                     if (minutesTextBox.CaretIndex >= minutesTextBox.Text.Length && secondsTextBox != null)
@@ -817,8 +876,13 @@ namespace WPFSoundVisualizationLib
                     }
                     break;
                 case Key.Escape:
-                    ValidateMinutes();
-                    RemoveFocusToTop();
+                    if (!RaiseEditingEvent(TimeEditorAction.ValueEntered, TimeEditorField.Minutes).Handled)
+                    {
+                        ValidateMinutes();
+                        RemoveFocusToTop();
+                    }
+                    else
+                        CopyValuesToTextBoxes();
                     break;
                 default:
                     // Do nothing
@@ -833,13 +897,18 @@ namespace WPFSoundVisualizationLib
             {
                 case Key.Enter:
                 case Key.Tab:
-                    ValidateSeconds();
+                    if (!RaiseEditingEvent(TimeEditorAction.ValueEntered, TimeEditorField.Seconds).Handled)
+                        ValidateSeconds();
+                    else
+                        CopyValuesToTextBoxes();
                     break;
                 case Key.Up:
-                    IncrementSeconds();
+                    if (!RaiseEditingEvent(TimeEditorAction.UpPressed, TimeEditorField.Seconds).Handled)
+                        IncrementSeconds();
                     break;
                 case Key.Down:
-                    DecrementSeconds();
+                    if (!RaiseEditingEvent(TimeEditorAction.DownPressed, TimeEditorField.Seconds).Handled)
+                        DecrementSeconds();
                     break;
                 case Key.Left:
                     if (secondsTextBox.CaretIndex <= 0 && minutesTextBox != null)
@@ -850,8 +919,13 @@ namespace WPFSoundVisualizationLib
                     }
                     break;
                 case Key.Escape:
-                    ValidateSeconds();
-                    RemoveFocusToTop();
+                    if (!RaiseEditingEvent(TimeEditorAction.ValueEntered, TimeEditorField.Seconds).Handled)
+                    {
+                        ValidateSeconds();
+                        RemoveFocusToTop();
+                    }
+                    else
+                        CopyValuesToTextBoxes();
                     break;
                 default:
                     // Do nothing
@@ -979,69 +1053,37 @@ namespace WPFSoundVisualizationLib
         #region Private Utility Methods
         private void IncrementHours()
         {
-            Hours += 1;
+            Value = Value.Add(TimeSpan.FromHours(1));
             ValidateHours();
         }
 
         private void DecrementHours()
         {
-            Hours = Math.Max(0, Hours - 1);
+            Value = Value.Subtract(TimeSpan.FromHours(1));
             ValidateHours();
         }
 
         private void IncrementMinutes()
         {
-            if (Minutes >= 59)
-            {
-                IncrementHours();
-                Minutes = 0;
-            }
-            else
-            {
-                Minutes = Math.Min(60, Minutes + 1);
-            }
+            Value = Value.Add(TimeSpan.FromMinutes(1));
             ValidateMinutes();
         }
 
         private void DecrementMinutes()
         {
-            if (Minutes == 0 && Hours > 0)
-            {
-                DecrementHours();
-                Minutes = 59;
-            }
-            else
-            {
-                Minutes = Math.Max(0, Minutes - 1);
-            }
+            Value = Value.Subtract(TimeSpan.FromMinutes(1));
             ValidateMinutes();
         }
 
         private void IncrementSeconds()
         {
-            if (Seconds >= 59)
-            {
-                IncrementMinutes();
-                Seconds = 0;
-            }
-            else
-            {
-                Seconds = Math.Min(60.0d, Seconds + 1.0d);
-            }
+            Value = Value.Add(TimeSpan.FromSeconds(1));
             ValidateSeconds();
         }
 
         private void DecrementSeconds()
         {
-            if (Seconds == 0 && Minutes > 0)
-            {
-                DecrementMinutes();
-                Seconds = 59;
-            }
-            else
-            {
-                Seconds = Math.Max(0, Seconds - 1.0d);
-            }
+            Value = Value.Subtract(TimeSpan.FromSeconds(1));
             ValidateSeconds();
         }
 
@@ -1122,11 +1164,11 @@ namespace WPFSoundVisualizationLib
         private void CopyValuesToTextBoxes()
         {
             if (hoursTextBox != null)
-                hoursTextBox.Text = Hours.ToString("00");
+                hoursTextBox.Text = Value.Hours.ToString("00");
             if (minutesTextBox != null)
-                minutesTextBox.Text = Minutes.ToString("00");
+                minutesTextBox.Text = Value.Minutes.ToString("00");
             if (secondsTextBox != null)
-                secondsTextBox.Text = Seconds.ToString("00.##");
+                secondsTextBox.Text = (Value.Seconds + (Value.Milliseconds / 1000.0d)).ToString("00.##");
         }
 
         private void RemoveFocusToTop()
