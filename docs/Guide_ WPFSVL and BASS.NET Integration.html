@@ -1,0 +1,318 @@
+<div class="wikidoc">
+<h2>Sections</h2>
+<p>1. Introduction / The Sound Player</p>
+<p>2. Sound Player Basic Requirements (Property Change Notification)</p>
+<p>3. Basic Audio Playback</p>
+<p>4. Spectrum Analyzer Support</p>
+<p>5. Stereo Waveform Timeline Support</p>
+<p>&nbsp;</p>
+<h2>1. Introduction / The Sound Player</h2>
+<p>The WPFSVL makes a certain assumption about your application&rsquo;s architecture. It assumes you&rsquo;ll have some object, somewhere, that is in charge of monitoring audio playback. It also assumes you&rsquo;ll be able to extend or wrap this object so
+ that it can implement certain interfaces that the WPFSVL can make use of. Since .NET is object-oriented, this is probably how you&rsquo;re already controlling your audio playback, so it shouldn&rsquo;t be much of a stretch. With regard to BASS.NET, most users
+ end up wrapping BASS.NET&rsquo;s calls into some more object-oriented structure. In order to use WPFSVL, you&rsquo;ll need to do the same.</p>
+<p>All of the logic mentioned in this guide can be found in the samples included with the source code. I&rsquo;ll do my best to keep this guide up to date, but I encourage you all to take a close look at that source code for the most up-to-date versions of
+<strong>SoundPlayer</strong> implementation for BASS.NET.</p>
+<p>It should also be noted that not ALL of the controls in the WPFSVL need a sound player object. Only the ones that have a method named
+<strong>RegisterSoundPlayer()</strong> will require a sound player object.</p>
+<p>&nbsp;</p>
+<h2>2. Sound Player Basic Requirements (Property Change Notification)</h2>
+<p>All of the controls that need a Sound Player object will also require two things. 1.) The sound player must implement
+<a href="http://msdn.microsoft.com/en-us/library/system.componentmodel.inotifypropertychanged.aspx">
+INotifyPropertyChanged</a> so the controls can be notified when something changes. 2.) The sound player must have an
+<strong>IsPlaying</strong> property so the controls can know when sound is playing. Internally,
+<strong>IsPlaying</strong> is used to stop animation timers and rendering loops when sound isn&rsquo;t playing. Without it, some controls like the Spectrum Analyzer would cause the application to use a fair amount of processing power even while your sound application
+ idles and does nothing. Putting that together, you&rsquo;ll end up a class scaffolding that looks like the code below.</p>
+<div id="x_x_x_x_scid:9D7513F9-C04C-4721-824A-2B34F0212519:85cb203f-a5fb-48e2-b036-c778640d6253" style="margin:0px; display:inline; float:none; padding:0px">
+<pre style="width:800px; height:320px; background-color:#f3f3f3; overflow:auto"><div><span style="color:#008080"> 1</span> <span style="color:#0000ff">public</span><span style="color:#000000"> </span><span style="color:#0000ff">class</span><span style="color:#000000"> BassEngine : ISoundPlayer
+</span><span style="color:#008080"> 2</span> <span style="color:#000000">{
+</span><span style="color:#008080"> 3</span> <span style="color:#000000">    </span><span style="color:#0000ff">private</span><span style="color:#000000"> </span><span style="color:#0000ff">bool</span><span style="color:#000000"> isPlaying;
+</span><span style="color:#008080"> 4</span> <span style="color:#000000">
+</span><span style="color:#008080"> 5</span> <span style="color:#000000">    </span><span style="color:#0000ff">#region</span><span style="color:#000000"> INotifyPropertyChanged</span><span style="color:#000000">
+</span><span style="color:#008080"> 6</span> <span style="color:#000000">    </span><span style="color:#0000ff">public</span><span style="color:#000000"> </span><span style="color:#0000ff">event</span><span style="color:#000000"> PropertyChangedEventHandler PropertyChanged;
+</span><span style="color:#008080"> 7</span> <span style="color:#000000">
+</span><span style="color:#008080"> 8</span> <span style="color:#000000">    </span><span style="color:#0000ff">private</span><span style="color:#000000"> </span><span style="color:#0000ff">void</span><span style="color:#000000"> NotifyPropertyChanged(String info)
+</span><span style="color:#008080"> 9</span> <span style="color:#000000">    {
+</span><span style="color:#008080">10</span> <span style="color:#000000">        </span><span style="color:#0000ff">if</span><span style="color:#000000"> (PropertyChanged </span><span style="color:#000000">!=</span><span style="color:#000000"> </span><span style="color:#0000ff">null</span><span style="color:#000000">)
+</span><span style="color:#008080">11</span> <span style="color:#000000">        {
+</span><span style="color:#008080">12</span> <span style="color:#000000">            PropertyChanged(</span><span style="color:#0000ff">this</span><span style="color:#000000">, </span><span style="color:#0000ff">new</span><span style="color:#000000"> PropertyChangedEventArgs(info));
+</span><span style="color:#008080">13</span> <span style="color:#000000">        }
+</span><span style="color:#008080">14</span> <span style="color:#000000">    }
+</span><span style="color:#008080">15</span> <span style="color:#000000">    </span><span style="color:#0000ff">#endregion</span><span style="color:#000000">
+</span><span style="color:#008080">16</span> <span style="color:#000000">
+</span><span style="color:#008080">17</span> <span style="color:#000000">    </span><span style="color:#0000ff">public</span><span style="color:#000000"> </span><span style="color:#0000ff">bool</span><span style="color:#000000"> IsPlaying
+</span><span style="color:#008080">18</span> <span style="color:#000000">    {
+</span><span style="color:#008080">19</span> <span style="color:#000000">        </span><span style="color:#0000ff">get</span><span style="color:#000000"> { </span><span style="color:#0000ff">return</span><span style="color:#000000"> isPlaying; }
+</span><span style="color:#008080">20</span> <span style="color:#000000">        </span><span style="color:#0000ff">protected</span><span style="color:#000000"> </span><span style="color:#0000ff">set</span><span style="color:#000000">
+</span><span style="color:#008080">21</span> <span style="color:#000000">        {
+</span><span style="color:#008080">22</span> <span style="color:#000000">            </span><span style="color:#0000ff">bool</span><span style="color:#000000"> oldValue </span><span style="color:#000000">=</span><span style="color:#000000"> isPlaying;
+</span><span style="color:#008080">23</span> <span style="color:#000000">            isPlaying </span><span style="color:#000000">=</span><span style="color:#000000"> value;
+</span><span style="color:#008080">24</span> <span style="color:#000000">            </span><span style="color:#0000ff">if</span><span style="color:#000000"> (oldValue </span><span style="color:#000000">!=</span><span style="color:#000000"> isPlaying)
+</span><span style="color:#008080">25</span> <span style="color:#000000">                NotifyPropertyChanged(</span><span style="color:#800000">&quot;</span><span style="color:#800000">IsPlaying</span><span style="color:#800000">&quot;</span><span style="color:#000000">);
+</span><span style="color:#008080">26</span> <span style="color:#000000">            positionTimer.IsEnabled </span><span style="color:#000000">=</span><span style="color:#000000"> value;
+</span><span style="color:#008080">27</span> <span style="color:#000000">        }
+</span><span style="color:#008080">28</span> <span style="color:#000000">    }
+</span><span style="color:#008080">29</span> <span style="color:#000000">}</span></div></pre>
+</div>
+<p>An alternative way you may consider implementing <a href="http://msdn.microsoft.com/en-us/library/system.componentmodel.inotifypropertychanged.aspx">
+INotifyPropertyChanged</a> is to make your sound player a <a href="http://msdn.microsoft.com/en-us/library/system.windows.dependencyobject.aspx">
+DependencyObject</a> and implement the required properties as <a href="http://msdn.microsoft.com/en-us/library/ms752914.aspx">
+DependencyProperties</a>. I chose *not* to do that here because many of you will be implementing your sound player in an assembly that is separate from your presentation code and references.&nbsp; However, if your sound player is in the same assembly as your
+ UI, the <a href="http://msdn.microsoft.com/en-us/library/system.windows.dependencyobject.aspx">
+DependencyObject</a> route may suit you well.</p>
+<p>&nbsp;</p>
+<h2>3. Basic Audio Playback</h2>
+<p>Chances are, if you&rsquo;re here, you probably already have some sort of sound playback in your application and you&rsquo;re just looking for ways to include some neat visualizations. My hope is that you won&rsquo;t need to change anything too drastically
+ to make it work with the WPFSVL controls. That said, if you don&rsquo;t already have a sound playback engine, are interested in seeing how I personally implemented one, or want some more information on why I implemented things the ways I did then this is the
+ section for you. Again, remember this is only my personal implementation of a sound player and you&rsquo;re free to implement a sound player however you would like.</p>
+<p>The first thing I know about my sound player is that I only need one of them. That is to say, I&rsquo;m not going to be playing multiple files at the same time so I only need to be processing one sound stream at time. Only one stream means only one sound
+ player. As such, I&rsquo;m going to use the <a href="http://msdn.microsoft.com/en-us/library/ff650316.aspx">
+Singleton Pattern</a> to ensure that only one instance of my sound player is ever instantiated. We&rsquo;ll build on my code from section 2 with the code below.</p>
+<div id="x_x_x_x_scid:9D7513F9-C04C-4721-824A-2B34F0212519:385f66b3-24ca-4a74-b7ef-7981f21788d9" style="margin:0px; display:inline; float:none; padding:0px">
+<pre style="width:800px; height:286px; background-color:#f3f3f3; overflow:auto"><div><span style="color:#008080"> 1</span> <span style="color:#0000ff">public</span><span style="color:#000000"> </span><span style="color:#0000ff">class</span><span style="color:#000000"> BassEngine : ISoundPlayer
+</span><span style="color:#008080"> 2</span> <span style="color:#000000">{
+</span><span style="color:#008080"> 3</span> <span style="color:#000000">    ... Other code ...
+</span><span style="color:#008080"> 4</span> <span style="color:#000000">
+</span><span style="color:#008080"> 5</span> <span style="color:#000000">    </span><span style="color:#0000ff">private</span><span style="color:#000000"> </span><span style="color:#0000ff">static</span><span style="color:#000000"> BassEngine instance;
+</span><span style="color:#008080"> 6</span> <span style="color:#000000">    
+</span><span style="color:#008080"> 7</span> <span style="color:#000000">    </span><span style="color:#0000ff">public</span><span style="color:#000000"> </span><span style="color:#0000ff">static</span><span style="color:#000000"> BassEngine Instance
+</span><span style="color:#008080"> 8</span> <span style="color:#000000">    {
+</span><span style="color:#008080"> 9</span> <span style="color:#000000">        </span><span style="color:#0000ff">get</span><span style="color:#000000">
+</span><span style="color:#008080">10</span> <span style="color:#000000">        {
+</span><span style="color:#008080">11</span> <span style="color:#000000">            </span><span style="color:#0000ff">if</span><span style="color:#000000"> (instance </span><span style="color:#000000">==</span><span style="color:#000000"> </span><span style="color:#0000ff">null</span><span style="color:#000000">)
+</span><span style="color:#008080">12</span> <span style="color:#000000">                instance </span><span style="color:#000000">=</span><span style="color:#000000"> </span><span style="color:#0000ff">new</span><span style="color:#000000"> BassEngine();
+</span><span style="color:#008080">13</span> <span style="color:#000000">            </span><span style="color:#0000ff">return</span><span style="color:#000000"> instance;
+</span><span style="color:#008080">14</span> <span style="color:#000000">        }
+</span><span style="color:#008080">15</span> <span style="color:#000000">    }    
+</span><span style="color:#008080">16</span> <span style="color:#000000">}</span></div></pre>
+</div>
+<p>Continuing on, our goal with the basic sound playback is twofold.</p>
+<ol>
+<li>We need to provide the basic file opening structure so we can open a file and start playing it.
+</li><li>We need to provide the right kind of public properties and methods from which the UI can control the playback.
+</li></ol>
+<p>Thus, take the code below and add it to the code you already have in the <strong>
+BassEngine</strong> class. The normal flow would have the user calling <strong>OpenFile()</strong> and passing it a path, presumably through a &ldquo;File &gt; Open&rdquo; dialog or something similar. Once passing it a valid path, we&rsquo;ll mark
+<strong>CanPlay</strong> as true. At this point, the user could call <strong>Play()</strong> (through something like a Play button). Pressing Play would, in turn, make the
+<strong>Stop() </strong>and <strong>Pause()</strong> commands available through the
+<strong>CanStop</strong> and <strong>CanPause</strong> properties respectively. Since
+<strong>CanStop </strong>and <strong>CanPause</strong> will raise property changed notification, it is a great idea to bind button&rsquo;s
+<strong>IsEnabled</strong> properties in your UI to these properties.</p>
+<div id="x_x_x_x_scid:9D7513F9-C04C-4721-824A-2B34F0212519:f3bd8f11-a853-4870-870c-ab94374bf591" style="margin:0px; display:inline; float:none; padding:0px">
+<pre style="width:800px; height:553px; background-color:#f3f3f3; overflow:auto"><div><span style="color:#008080">  1</span> <span style="color:#0000ff">public</span><span style="color:#000000"> </span><span style="color:#0000ff">class</span><span style="color:#000000"> BassEngine : ISoundPlayer
+</span><span style="color:#008080">  2</span> <span style="color:#000000">{
+</span><span style="color:#008080">  3</span> <span style="color:#000000">    </span><span style="color:#0000ff">private</span><span style="color:#000000"> </span><span style="color:#0000ff">int</span><span style="color:#000000"> activeStreamHandle;
+</span><span style="color:#008080">  4</span> <span style="color:#000000">    </span><span style="color:#0000ff">private</span><span style="color:#000000"> </span><span style="color:#0000ff">bool</span><span style="color:#000000"> canPlay;
+</span><span style="color:#008080">  5</span> <span style="color:#000000">    </span><span style="color:#0000ff">private</span><span style="color:#000000"> </span><span style="color:#0000ff">bool</span><span style="color:#000000"> canPause;
+</span><span style="color:#008080">  6</span> <span style="color:#000000">    </span><span style="color:#0000ff">private</span><span style="color:#000000"> </span><span style="color:#0000ff">bool</span><span style="color:#000000"> canStop;
+</span><span style="color:#008080">  7</span> <span style="color:#000000">
+</span><span style="color:#008080">  8</span> <span style="color:#000000">    ... Other code ...
+</span><span style="color:#008080">  9</span> <span style="color:#000000">    
+</span><span style="color:#008080"> 10</span> <span style="color:#000000">    </span><span style="color:#0000ff">public</span><span style="color:#000000"> </span><span style="color:#0000ff">void</span><span style="color:#000000"> Stop()
+</span><span style="color:#008080"> 11</span> <span style="color:#000000">    {
+</span><span style="color:#008080"> 12</span> <span style="color:#000000">        </span><span style="color:#0000ff">if</span><span style="color:#000000"> (ActiveStreamHandle </span><span style="color:#000000">!=</span><span style="color:#000000"> </span><span style="color:#800080">0</span><span style="color:#000000">)
+</span><span style="color:#008080"> 13</span> <span style="color:#000000">        {
+</span><span style="color:#008080"> 14</span> <span style="color:#000000">            Bass.BASS_ChannelStop(ActiveStreamHandle);
+</span><span style="color:#008080"> 15</span> <span style="color:#000000">            Bass.BASS_ChannelSetPosition(ActiveStreamHandle, ChannelPosition);
+</span><span style="color:#008080"> 16</span> <span style="color:#000000">        }
+</span><span style="color:#008080"> 17</span> <span style="color:#000000">        IsPlaying </span><span style="color:#000000">=</span><span style="color:#000000"> </span><span style="color:#0000ff">false</span><span style="color:#000000">;
+</span><span style="color:#008080"> 18</span> <span style="color:#000000">        CanStop </span><span style="color:#000000">=</span><span style="color:#000000"> </span><span style="color:#0000ff">false</span><span style="color:#000000">;
+</span><span style="color:#008080"> 19</span> <span style="color:#000000">        CanPlay </span><span style="color:#000000">=</span><span style="color:#000000"> </span><span style="color:#0000ff">true</span><span style="color:#000000">;
+</span><span style="color:#008080"> 20</span> <span style="color:#000000">        CanPause </span><span style="color:#000000">=</span><span style="color:#000000"> </span><span style="color:#0000ff">false</span><span style="color:#000000">;
+</span><span style="color:#008080"> 21</span> <span style="color:#000000">    }
+</span><span style="color:#008080"> 22</span> <span style="color:#000000">
+</span><span style="color:#008080"> 23</span> <span style="color:#000000">    </span><span style="color:#0000ff">public</span><span style="color:#000000"> </span><span style="color:#0000ff">void</span><span style="color:#000000"> Pause()
+</span><span style="color:#008080"> 24</span> <span style="color:#000000">    {
+</span><span style="color:#008080"> 25</span> <span style="color:#000000">        </span><span style="color:#0000ff">if</span><span style="color:#000000"> (IsPlaying </span><span style="color:#000000">&amp;&amp;</span><span style="color:#000000"> CanPause)
+</span><span style="color:#008080"> 26</span> <span style="color:#000000">        {
+</span><span style="color:#008080"> 27</span> <span style="color:#000000">            Bass.BASS_ChannelPause(ActiveStreamHandle);
+</span><span style="color:#008080"> 28</span> <span style="color:#000000">            IsPlaying </span><span style="color:#000000">=</span><span style="color:#000000"> </span><span style="color:#0000ff">false</span><span style="color:#000000">;
+</span><span style="color:#008080"> 29</span> <span style="color:#000000">            CanPlay </span><span style="color:#000000">=</span><span style="color:#000000"> </span><span style="color:#0000ff">true</span><span style="color:#000000">;
+</span><span style="color:#008080"> 30</span> <span style="color:#000000">            CanPause </span><span style="color:#000000">=</span><span style="color:#000000"> </span><span style="color:#0000ff">false</span><span style="color:#000000">;
+</span><span style="color:#008080"> 31</span> <span style="color:#000000">        }
+</span><span style="color:#008080"> 32</span> <span style="color:#000000">    }
+</span><span style="color:#008080"> 33</span> <span style="color:#000000">
+</span><span style="color:#008080"> 34</span> <span style="color:#000000">    </span><span style="color:#0000ff">public</span><span style="color:#000000"> </span><span style="color:#0000ff">void</span><span style="color:#000000"> Play()
+</span><span style="color:#008080"> 35</span> <span style="color:#000000">    {
+</span><span style="color:#008080"> 36</span> <span style="color:#000000">        </span><span style="color:#0000ff">if</span><span style="color:#000000"> (CanPlay)
+</span><span style="color:#008080"> 37</span> <span style="color:#000000">        {
+</span><span style="color:#008080"> 38</span> <span style="color:#000000">            PlayCurrentStream();
+</span><span style="color:#008080"> 39</span> <span style="color:#000000">            IsPlaying </span><span style="color:#000000">=</span><span style="color:#000000"> </span><span style="color:#0000ff">true</span><span style="color:#000000">;
+</span><span style="color:#008080"> 40</span> <span style="color:#000000">            CanPause </span><span style="color:#000000">=</span><span style="color:#000000"> </span><span style="color:#0000ff">true</span><span style="color:#000000">;
+</span><span style="color:#008080"> 41</span> <span style="color:#000000">            CanPlay </span><span style="color:#000000">=</span><span style="color:#000000"> </span><span style="color:#0000ff">false</span><span style="color:#000000">;
+</span><span style="color:#008080"> 42</span> <span style="color:#000000">            CanStop </span><span style="color:#000000">=</span><span style="color:#000000"> </span><span style="color:#0000ff">true</span><span style="color:#000000">;
+</span><span style="color:#008080"> 43</span> <span style="color:#000000">        }
+</span><span style="color:#008080"> 44</span> <span style="color:#000000">    }
+</span><span style="color:#008080"> 45</span> <span style="color:#000000">
+</span><span style="color:#008080"> 46</span> <span style="color:#000000">    </span><span style="color:#0000ff">public</span><span style="color:#000000"> </span><span style="color:#0000ff">bool</span><span style="color:#000000"> OpenFile(</span><span style="color:#0000ff">string</span><span style="color:#000000"> path)
+</span><span style="color:#008080"> 47</span> <span style="color:#000000">    {
+</span><span style="color:#008080"> 48</span> <span style="color:#000000">        Stop();
+</span><span style="color:#008080"> 49</span> <span style="color:#000000">
+</span><span style="color:#008080"> 50</span> <span style="color:#000000">        </span><span style="color:#0000ff">if</span><span style="color:#000000"> (ActiveStreamHandle </span><span style="color:#000000">!=</span><span style="color:#000000"> </span><span style="color:#800080">0</span><span style="color:#000000">)
+</span><span style="color:#008080"> 51</span> <span style="color:#000000">        {
+</span><span style="color:#008080"> 52</span> <span style="color:#000000">            Bass.BASS_StreamFree(ActiveStreamHandle);
+</span><span style="color:#008080"> 53</span> <span style="color:#000000">        }
+</span><span style="color:#008080"> 54</span> <span style="color:#000000">
+</span><span style="color:#008080"> 55</span> <span style="color:#000000">        </span><span style="color:#0000ff">if</span><span style="color:#000000"> (System.IO.File.Exists(path))
+</span><span style="color:#008080"> 56</span> <span style="color:#000000">        {
+</span><span style="color:#008080"> 57</span> <span style="color:#000000">            </span><span style="color:#008000">//</span><span style="color:#008000"> Create Stream</span><span style="color:#008000">
+</span><span style="color:#008080"> 58</span> <span style="color:#008000">&nbsp;</span><span style="color:#000000">            ActiveStreamHandle </span><span style="color:#000000">=</span><span style="color:#000000"> Bass.BASS_StreamCreateFile(path, </span><span style="color:#800080">0</span><span style="color:#000000">, </span><span style="color:#800080">0</span><span style="color:#000000">, BASSFlag.BASS_SAMPLE_FLOAT </span><span style="color:#000000">|</span><span style="color:#000000"> BASSFlag.BASS_STREAM_PRESCAN);            
+</span><span style="color:#008080"> 59</span> <span style="color:#000000">            </span><span style="color:#0000ff">if</span><span style="color:#000000"> (ActiveStreamHandle </span><span style="color:#000000">!=</span><span style="color:#000000"> </span><span style="color:#800080">0</span><span style="color:#000000">)
+</span><span style="color:#008080"> 60</span> <span style="color:#000000">            {
+</span><span style="color:#008080"> 61</span> <span style="color:#000000">                CanPlay </span><span style="color:#000000">=</span><span style="color:#000000"> </span><span style="color:#0000ff">true</span><span style="color:#000000">;
+</span><span style="color:#008080"> 62</span> <span style="color:#000000">                </span><span style="color:#0000ff">return</span><span style="color:#000000"> </span><span style="color:#0000ff">true</span><span style="color:#000000">;
+</span><span style="color:#008080"> 63</span> <span style="color:#000000">            }
+</span><span style="color:#008080"> 64</span> <span style="color:#000000">            </span><span style="color:#0000ff">else</span><span style="color:#000000">
+</span><span style="color:#008080"> 65</span> <span style="color:#000000">            {
+</span><span style="color:#008080"> 66</span> <span style="color:#000000">                ActiveStreamHandle </span><span style="color:#000000">=</span><span style="color:#000000"> </span><span style="color:#800080">0</span><span style="color:#000000">;
+</span><span style="color:#008080"> 67</span> <span style="color:#000000">                CanPlay </span><span style="color:#000000">=</span><span style="color:#000000"> </span><span style="color:#0000ff">false</span><span style="color:#000000">;
+</span><span style="color:#008080"> 68</span> <span style="color:#000000">            }
+</span><span style="color:#008080"> 69</span> <span style="color:#000000">        }
+</span><span style="color:#008080"> 70</span> <span style="color:#000000">        </span><span style="color:#0000ff">return</span><span style="color:#000000"> </span><span style="color:#0000ff">false</span><span style="color:#000000">;
+</span><span style="color:#008080"> 71</span> <span style="color:#000000">    }
+</span><span style="color:#008080"> 72</span> <span style="color:#000000">    
+</span><span style="color:#008080"> 73</span> <span style="color:#000000">    </span><span style="color:#0000ff">private</span><span style="color:#000000"> </span><span style="color:#0000ff">void</span><span style="color:#000000"> PlayCurrentStream()
+</span><span style="color:#008080"> 74</span> <span style="color:#000000">    {
+</span><span style="color:#008080"> 75</span> <span style="color:#000000">        </span><span style="color:#008000">//</span><span style="color:#008000"> Play Stream</span><span style="color:#008000">
+</span><span style="color:#008080"> 76</span> <span style="color:#008000">&nbsp;</span><span style="color:#000000">        </span><span style="color:#0000ff">if</span><span style="color:#000000"> (ActiveStreamHandle </span><span style="color:#000000">!=</span><span style="color:#000000"> </span><span style="color:#800080">0</span><span style="color:#000000">)
+</span><span style="color:#008080"> 77</span> <span style="color:#000000">        {
+</span><span style="color:#008080"> 78</span> <span style="color:#000000">             Bass.BASS_ChannelPlay(ActiveStreamHandle, </span><span style="color:#0000ff">false</span><span style="color:#000000">);
+</span><span style="color:#008080"> 79</span> <span style="color:#000000">        }
+</span><span style="color:#008080"> 80</span> <span style="color:#000000">    }     
+</span><span style="color:#008080"> 81</span> <span style="color:#000000">    
+</span><span style="color:#008080"> 82</span> <span style="color:#000000">    </span><span style="color:#0000ff">public</span><span style="color:#000000"> </span><span style="color:#0000ff">int</span><span style="color:#000000"> ActiveStreamHandle
+</span><span style="color:#008080"> 83</span> <span style="color:#000000">    {
+</span><span style="color:#008080"> 84</span> <span style="color:#000000">        </span><span style="color:#0000ff">get</span><span style="color:#000000"> { </span><span style="color:#0000ff">return</span><span style="color:#000000"> activeStreamHandle; }
+</span><span style="color:#008080"> 85</span> <span style="color:#000000">        </span><span style="color:#0000ff">protected</span><span style="color:#000000"> </span><span style="color:#0000ff">set</span><span style="color:#000000">
+</span><span style="color:#008080"> 86</span> <span style="color:#000000">        {
+</span><span style="color:#008080"> 87</span> <span style="color:#000000">            </span><span style="color:#0000ff">int</span><span style="color:#000000"> oldValue </span><span style="color:#000000">=</span><span style="color:#000000"> activeStreamHandle;
+</span><span style="color:#008080"> 88</span> <span style="color:#000000">            activeStreamHandle </span><span style="color:#000000">=</span><span style="color:#000000"> value;
+</span><span style="color:#008080"> 89</span> <span style="color:#000000">            </span><span style="color:#0000ff">if</span><span style="color:#000000"> (oldValue </span><span style="color:#000000">!=</span><span style="color:#000000"> activeStreamHandle)
+</span><span style="color:#008080"> 90</span> <span style="color:#000000">                NotifyPropertyChanged(</span><span style="color:#800000">&quot;</span><span style="color:#800000">ActiveStreamHandle</span><span style="color:#800000">&quot;</span><span style="color:#000000">);
+</span><span style="color:#008080"> 91</span> <span style="color:#000000">        }
+</span><span style="color:#008080"> 92</span> <span style="color:#000000">    }
+</span><span style="color:#008080"> 93</span> <span style="color:#000000">
+</span><span style="color:#008080"> 94</span> <span style="color:#000000">    </span><span style="color:#0000ff">public</span><span style="color:#000000"> </span><span style="color:#0000ff">bool</span><span style="color:#000000"> CanPlay
+</span><span style="color:#008080"> 95</span> <span style="color:#000000">    {
+</span><span style="color:#008080"> 96</span> <span style="color:#000000">        </span><span style="color:#0000ff">get</span><span style="color:#000000"> { </span><span style="color:#0000ff">return</span><span style="color:#000000"> canPlay; }
+</span><span style="color:#008080"> 97</span> <span style="color:#000000">        </span><span style="color:#0000ff">protected</span><span style="color:#000000"> </span><span style="color:#0000ff">set</span><span style="color:#000000">
+</span><span style="color:#008080"> 98</span> <span style="color:#000000">        {
+</span><span style="color:#008080"> 99</span> <span style="color:#000000">            </span><span style="color:#0000ff">bool</span><span style="color:#000000"> oldValue </span><span style="color:#000000">=</span><span style="color:#000000"> canPlay;
+</span><span style="color:#008080">100</span> <span style="color:#000000">            canPlay </span><span style="color:#000000">=</span><span style="color:#000000"> value;
+</span><span style="color:#008080">101</span> <span style="color:#000000">            </span><span style="color:#0000ff">if</span><span style="color:#000000"> (oldValue </span><span style="color:#000000">!=</span><span style="color:#000000"> canPlay)
+</span><span style="color:#008080">102</span> <span style="color:#000000">                NotifyPropertyChanged(</span><span style="color:#800000">&quot;</span><span style="color:#800000">CanPlay</span><span style="color:#800000">&quot;</span><span style="color:#000000">);
+</span><span style="color:#008080">103</span> <span style="color:#000000">        }
+</span><span style="color:#008080">104</span> <span style="color:#000000">    }
+</span><span style="color:#008080">105</span> <span style="color:#000000">
+</span><span style="color:#008080">106</span> <span style="color:#000000">    </span><span style="color:#0000ff">public</span><span style="color:#000000"> </span><span style="color:#0000ff">bool</span><span style="color:#000000"> CanPause
+</span><span style="color:#008080">107</span> <span style="color:#000000">    {
+</span><span style="color:#008080">108</span> <span style="color:#000000">        </span><span style="color:#0000ff">get</span><span style="color:#000000"> { </span><span style="color:#0000ff">return</span><span style="color:#000000"> canPause; }
+</span><span style="color:#008080">109</span> <span style="color:#000000">        </span><span style="color:#0000ff">protected</span><span style="color:#000000"> </span><span style="color:#0000ff">set</span><span style="color:#000000">
+</span><span style="color:#008080">110</span> <span style="color:#000000">        {
+</span><span style="color:#008080">111</span> <span style="color:#000000">            </span><span style="color:#0000ff">bool</span><span style="color:#000000"> oldValue </span><span style="color:#000000">=</span><span style="color:#000000"> canPause;
+</span><span style="color:#008080">112</span> <span style="color:#000000">            canPause </span><span style="color:#000000">=</span><span style="color:#000000"> value;
+</span><span style="color:#008080">113</span> <span style="color:#000000">            </span><span style="color:#0000ff">if</span><span style="color:#000000"> (oldValue </span><span style="color:#000000">!=</span><span style="color:#000000"> canPause)
+</span><span style="color:#008080">114</span> <span style="color:#000000">                NotifyPropertyChanged(</span><span style="color:#800000">&quot;</span><span style="color:#800000">CanPause</span><span style="color:#800000">&quot;</span><span style="color:#000000">);
+</span><span style="color:#008080">115</span> <span style="color:#000000">        }
+</span><span style="color:#008080">116</span> <span style="color:#000000">    }
+</span><span style="color:#008080">117</span> <span style="color:#000000">
+</span><span style="color:#008080">118</span> <span style="color:#000000">    </span><span style="color:#0000ff">public</span><span style="color:#000000"> </span><span style="color:#0000ff">bool</span><span style="color:#000000"> CanStop
+</span><span style="color:#008080">119</span> <span style="color:#000000">    {
+</span><span style="color:#008080">120</span> <span style="color:#000000">        </span><span style="color:#0000ff">get</span><span style="color:#000000"> { </span><span style="color:#0000ff">return</span><span style="color:#000000"> canStop; }
+</span><span style="color:#008080">121</span> <span style="color:#000000">        </span><span style="color:#0000ff">protected</span><span style="color:#000000"> </span><span style="color:#0000ff">set</span><span style="color:#000000">
+</span><span style="color:#008080">122</span> <span style="color:#000000">        {
+</span><span style="color:#008080">123</span> <span style="color:#000000">            </span><span style="color:#0000ff">bool</span><span style="color:#000000"> oldValue </span><span style="color:#000000">=</span><span style="color:#000000"> canStop;
+</span><span style="color:#008080">124</span> <span style="color:#000000">            canStop </span><span style="color:#000000">=</span><span style="color:#000000"> value;
+</span><span style="color:#008080">125</span> <span style="color:#000000">            </span><span style="color:#0000ff">if</span><span style="color:#000000"> (oldValue </span><span style="color:#000000">!=</span><span style="color:#000000"> canStop)
+</span><span style="color:#008080">126</span> <span style="color:#000000">                NotifyPropertyChanged(</span><span style="color:#800000">&quot;</span><span style="color:#800000">CanStop</span><span style="color:#800000">&quot;</span><span style="color:#000000">);
+</span><span style="color:#008080">127</span> <span style="color:#000000">        }
+</span><span style="color:#008080">128</span> <span style="color:#000000">    }  
+</span><span style="color:#008080">129</span> <span style="color:#000000">}</span></div></pre>
+</div>
+<h2>4. Spectrum Analyzer Support</h2>
+<p>If you&rsquo;ve done everything above, we&rsquo;re very close to having support for the Spectrum Analyzer. The spectrum analyzer requires a few things of the sound player.</p>
+<ol>
+<li>A mechanism to get FFT data that has been translated to real intensity values (i.e., it has already calculated out the imaginary values).
+</li><li>A way to know which value in the FFT array corresponds with a particular frequency.
+</li><li>The sound player must be marked indicating it has support for the Spectrum Analyzer. This is done by inheriting the
+<strong>ISpectrumPlayer</strong> interface. </li></ol>
+<p>Luckily, BASS.NET makes the calculations in the first two requirements fairly trivial. We will, however, need to provide some information to BASS. First, we need to know the sample rate of the file we&rsquo;re listening to. This is because the maximum frequency
+ of the song will be half of the sample rate. In other words, a file with a sample rate of 44.1 kHz will have a maximum frequency of 22.05kHz. To obtain the sample rate, we&rsquo;ll add a little bit of code to the
+<strong>OpenFile() </strong>method we wrote above. Unlike many other libraries, the rest of the sampling logic is taken care of for us, as is the FFT formula.&nbsp; Add the following code:</p>
+<div id="x_x_x_x_scid:9D7513F9-C04C-4721-824A-2B34F0212519:c819edc0-acfb-46ad-90c0-668303554966" style="margin:0px; display:inline; float:none; padding:0px">
+<pre style="width:800px; height:320px; background-color:#f3f3f3; overflow:auto"><div><span style="color:#008080"> 1</span> <span style="color:#0000ff">public</span><span style="color:#000000"> </span><span style="color:#0000ff">class</span><span style="color:#000000"> BassEngine : ISpectrumPlayer
+</span><span style="color:#008080"> 2</span> <span style="color:#000000">{
+</span><span style="color:#008080"> 3</span> <span style="color:#000000">    </span><span style="color:#0000ff">private</span><span style="color:#000000"> </span><span style="color:#0000ff">readonly</span><span style="color:#000000"> </span><span style="color:#0000ff">int</span><span style="color:#000000"> fftDataSize </span><span style="color:#000000">=</span><span style="color:#000000"> (</span><span style="color:#0000ff">int</span><span style="color:#000000">)FFTDataSize.FFT2048;
+</span><span style="color:#008080"> 4</span> <span style="color:#000000">    </span><span style="color:#0000ff">private</span><span style="color:#000000"> </span><span style="color:#0000ff">readonly</span><span style="color:#000000"> </span><span style="color:#0000ff">int</span><span style="color:#000000"> maxFFT </span><span style="color:#000000">=</span><span style="color:#000000"> (</span><span style="color:#0000ff">int</span><span style="color:#000000">)(BASSData.BASS_DATA_AVAILABLE </span><span style="color:#000000">|</span><span style="color:#000000"> BASSData.BASS_DATA_FFT2048);
+</span><span style="color:#008080"> 5</span> <span style="color:#000000">    </span><span style="color:#0000ff">private</span><span style="color:#000000"> </span><span style="color:#0000ff">int</span><span style="color:#000000"> sampleFrequency </span><span style="color:#000000">=</span><span style="color:#000000"> </span><span style="color:#800080">44100</span><span style="color:#000000">;
+</span><span style="color:#008080"> 6</span> <span style="color:#000000">    
+</span><span style="color:#008080"> 7</span> <span style="color:#000000">    ... Other code ...    
+</span><span style="color:#008080"> 8</span> <span style="color:#000000">    
+</span><span style="color:#008080"> 9</span> <span style="color:#000000">    </span><span style="color:#0000ff">public</span><span style="color:#000000"> </span><span style="color:#0000ff">bool</span><span style="color:#000000"> OpenFile(</span><span style="color:#0000ff">string</span><span style="color:#000000"> path)
+</span><span style="color:#008080">10</span> <span style="color:#000000">    {
+</span><span style="color:#008080">11</span> <span style="color:#000000">        Stop();
+</span><span style="color:#008080">12</span> <span style="color:#000000">
+</span><span style="color:#008080">13</span> <span style="color:#000000">        </span><span style="color:#0000ff">if</span><span style="color:#000000"> (ActiveStreamHandle </span><span style="color:#000000">!=</span><span style="color:#000000"> </span><span style="color:#800080">0</span><span style="color:#000000">)
+</span><span style="color:#008080">14</span> <span style="color:#000000">        {
+</span><span style="color:#008080">15</span> <span style="color:#000000">            Bass.BASS_StreamFree(ActiveStreamHandle);
+</span><span style="color:#008080">16</span> <span style="color:#000000">        }
+</span><span style="color:#008080">17</span> <span style="color:#000000">
+</span><span style="color:#008080">18</span> <span style="color:#000000">        </span><span style="color:#0000ff">if</span><span style="color:#000000"> (System.IO.File.Exists(path))
+</span><span style="color:#008080">19</span> <span style="color:#000000">        {
+</span><span style="color:#008080">20</span> <span style="color:#000000">            </span><span style="color:#008000">//</span><span style="color:#008000"> Create Stream</span><span style="color:#008000">
+</span><span style="color:#008080">21</span> <span style="color:#008000">&nbsp;</span><span style="color:#000000">            ActiveStreamHandle </span><span style="color:#000000">=</span><span style="color:#000000"> Bass.BASS_StreamCreateFile(path, </span><span style="color:#800080">0</span><span style="color:#000000">, </span><span style="color:#800080">0</span><span style="color:#000000">, BASSFlag.BASS_SAMPLE_FLOAT </span><span style="color:#000000">|</span><span style="color:#000000"> BASSFlag.BASS_STREAM_PRESCAN);            
+</span><span style="color:#008080">22</span> <span style="color:#000000">            </span><span style="color:#0000ff">if</span><span style="color:#000000"> (ActiveStreamHandle </span><span style="color:#000000">!=</span><span style="color:#000000"> </span><span style="color:#800080">0</span><span style="color:#000000">)
+</span><span style="color:#008080">23</span> <span style="color:#000000">            {
+</span><span style="color:#008080">24</span> <span style="color:#000000">                </span><span style="color:#008000">//</span><span style="color:#008000"> Obtain the sample rate of the stream</span><span style="color:#008000">
+</span><span style="color:#008080">25</span> <span style="color:#008000">&nbsp;</span><span style="color:#000000">                BASS_CHANNELINFO info </span><span style="color:#000000">=</span><span style="color:#000000"> </span><span style="color:#0000ff">new</span><span style="color:#000000"> BASS_CHANNELINFO();
+</span><span style="color:#008080">26</span> <span style="color:#000000">                Bass.BASS_ChannelGetInfo(ActiveStreamHandle, info);
+</span><span style="color:#008080">27</span> <span style="color:#000000">                sampleFrequency </span><span style="color:#000000">=</span><span style="color:#000000"> info.freq;
+</span><span style="color:#008080">28</span> <span style="color:#000000">            
+</span><span style="color:#008080">29</span> <span style="color:#000000">                CanPlay </span><span style="color:#000000">=</span><span style="color:#000000"> </span><span style="color:#0000ff">true</span><span style="color:#000000">;
+</span><span style="color:#008080">30</span> <span style="color:#000000">                </span><span style="color:#0000ff">return</span><span style="color:#000000"> </span><span style="color:#0000ff">true</span><span style="color:#000000">;
+</span><span style="color:#008080">31</span> <span style="color:#000000">            }
+</span><span style="color:#008080">32</span> <span style="color:#000000">            </span><span style="color:#0000ff">else</span><span style="color:#000000">
+</span><span style="color:#008080">33</span> <span style="color:#000000">            {
+</span><span style="color:#008080">34</span> <span style="color:#000000">                ActiveStreamHandle </span><span style="color:#000000">=</span><span style="color:#000000"> </span><span style="color:#800080">0</span><span style="color:#000000">;
+</span><span style="color:#008080">35</span> <span style="color:#000000">                CanPlay </span><span style="color:#000000">=</span><span style="color:#000000"> </span><span style="color:#0000ff">false</span><span style="color:#000000">;
+</span><span style="color:#008080">36</span> <span style="color:#000000">            }
+</span><span style="color:#008080">37</span> <span style="color:#000000">        }
+</span><span style="color:#008080">38</span> <span style="color:#000000">        </span><span style="color:#0000ff">return</span><span style="color:#000000"> </span><span style="color:#0000ff">false</span><span style="color:#000000">;
+</span><span style="color:#008080">39</span> <span style="color:#000000">    }
+</span><span style="color:#008080">40</span> <span style="color:#000000">    
+</span><span style="color:#008080">41</span> <span style="color:#000000">    </span><span style="color:#0000ff">public</span><span style="color:#000000"> </span><span style="color:#0000ff">int</span><span style="color:#000000"> GetFFTFrequencyIndex(</span><span style="color:#0000ff">int</span><span style="color:#000000"> frequency)
+</span><span style="color:#008080">42</span> <span style="color:#000000">    {
+</span><span style="color:#008080">43</span> <span style="color:#000000">        </span><span style="color:#0000ff">return</span><span style="color:#000000"> Utils.FFTFrequency2Index(frequency, fftDataSize, sampleFrequency);
+</span><span style="color:#008080">44</span> <span style="color:#000000">    }
+</span><span style="color:#008080">45</span> <span style="color:#000000">
+</span><span style="color:#008080">46</span> <span style="color:#000000">    </span><span style="color:#0000ff">public</span><span style="color:#000000"> </span><span style="color:#0000ff">bool</span><span style="color:#000000"> GetFFTData(</span><span style="color:#0000ff">float</span><span style="color:#000000">[] fftDataBuffer)
+</span><span style="color:#008080">47</span> <span style="color:#000000">    {
+</span><span style="color:#008080">48</span> <span style="color:#000000">        </span><span style="color:#0000ff">return</span><span style="color:#000000"> (Bass.BASS_ChannelGetData(ActiveStreamHandle, fftDataBuffer, maxFFT)) </span><span style="color:#000000">&gt;</span><span style="color:#000000"> </span><span style="color:#800080">0</span><span style="color:#000000">;
+</span><span style="color:#008080">49</span> <span style="color:#000000">    }
+</span><span style="color:#008080">50</span> <span style="color:#000000">}</span></div></pre>
+</div>
+<p>We&rsquo;ve added the two methods required by <strong>ISpectrumPlayer</strong>,
+<strong>GetFFTFrequencyIndex()</strong> and <strong>GetFFTData()</strong>. Now we should be able to add a Spectrum Analyzer to our Window and register the
+<strong>BassEngine</strong> class as the Spectrum Analyzer&rsquo;s sound player. Start with adding the actual Spectrum Analyzer control somewhere in your Window&rsquo;s XAML. The sample below gives an example of referencing the WPFSVL namespace.</p>
+<p>&nbsp;</p>
+<div id="x_x_x_x_scid:9D7513F9-C04C-4721-824A-2B34F0212519:c28ccc19-24ce-48cb-8c67-e75d4d2f2ac0" style="margin:0px; display:inline; float:none; padding:0px">
+<pre style="width:857px; height:147px; background-color:#f3f3f3; overflow:auto"><div><span style="color:#008080">1</span> <span style="color:#0000ff">&lt;</span><span style="color:#800000">Window </span><span style="color:#ff0000">xmlns:svl</span><span style="color:#0000ff">=&quot;clr-namespace:WPFSoundVisualizationLib;assembly=WPFSoundVisualizationLib&quot;</span><span style="color:#ff0000">&quot;</span><span style="color:#0000ff">&gt;</span><span style="color:#000000">
+</span><span style="color:#008080">2</span> <span style="color:#000000">
+</span><span style="color:#008080">3</span> <span style="color:#000000">     </span><span style="color:#008000">&lt;!--</span><span style="color:#008000"> Rest of your Windows code </span><span style="color:#008000">--&gt;</span><span style="color:#000000">
+</span><span style="color:#008080">4</span> <span style="color:#000000">     
+</span><span style="color:#008080">5</span> <span style="color:#000000">    </span><span style="color:#0000ff">&lt;</span><span style="color:#800000">svl:SpectrumAnalyzer </span><span style="color:#ff0000">x:Name</span><span style="color:#0000ff">=&quot;spectrumAnalyzer&quot;</span><span style="color:#ff0000"> </span><span style="color:#0000ff">/&gt;</span><span style="color:#000000">
+</span><span style="color:#008080">6</span> <span style="color:#000000">    
+</span><span style="color:#008080">7</span> <span style="color:#000000">&nbsp;</span><span style="color:#0000ff">&lt;/</span><span style="color:#800000">Window</span><span style="color:#0000ff">&gt;</span></div></pre>
+</div>
+<p>Now, in the code-behind, we&rsquo;ll want to register our sound player with the Spectrum Analyzer control:</p>
+<div id="x_x_x_x_scid:9D7513F9-C04C-4721-824A-2B34F0212519:b94e5f2e-10e4-4733-a9c4-4c65efb5ab73" style="margin:0px; display:inline; float:none; padding:0px">
+<pre style="width:857px; height:114px; background-color:#f3f3f3; overflow:auto"><div><span style="color:#008080">1</span> <span style="color:#0000ff">public</span><span style="color:#000000"> MainWindow()
+</span><span style="color:#008080">2</span> <span style="color:#000000">{
+</span><span style="color:#008080">3</span> <span style="color:#000000">    InitializeComponent();
+</span><span style="color:#008080">4</span> <span style="color:#000000">
+</span><span style="color:#008080">5</span> <span style="color:#000000">    spectrumAnalyzer.RegisterSoundPlayer(BassEngine.Instance);
+</span><span style="color:#008080">6</span> <span style="color:#000000">}</span></div></pre>
+</div>
+<p>We should now have a working Spectrum Analyzer! Be sure to check the samples included with the source code to see a more complete example with a few extra features!</p>
+<h2>5. Stereo Waveform Timeline Support</h2>
+<p>Coming soon...</p>
+</div><div class="ClearBoth"></div>

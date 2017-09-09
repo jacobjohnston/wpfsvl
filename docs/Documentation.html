@@ -1,0 +1,43 @@
+<div class="wikidoc">
+<p>Welcome! This is the place you want to be if you&rsquo;re first getting started with the WPF Sound Visualization Library!</p>
+<p>&nbsp;</p>
+<p><strong>Prerequisite Knowledge</strong></p>
+<p>While it isn&rsquo;t entirely necessary to know about digital signal processing, it will help in understanding what sort of data these controls required. One concept, in particular, that you&rsquo;ll see recurring is that of acquiring FFT data. &ldquo;FFT&rdquo;
+ stands for &ldquo;fast Fourier transform&rdquo; and it is the way computers transform time-domain information into frequency domain information. Different sound/DSP libraries will present their FFT data in different ways, so understanding what that data actually
+ means will help you in getting it into the right form for this control library to use. I encourage you to
+<a href="http://en.wikipedia.org/wiki/Fast_Fourier_transform">read more on fast Fourier transforms</a>.</p>
+<p>&nbsp;</p>
+<p><strong>Step 1 &ndash; Choose Your Sound Library</strong></p>
+<p>The first thing you&rsquo;ll want to understand is that the WPF Sound Visualization Library (<strong>WPFSVL</strong>) is meant to work with any source of sound stream data that you feed it. To accommodate this, the architecture may be little more complicated
+ than some more common Windows controls. Controls like the Album Art Display are very straight-forward and easy to drop in and use, but controls like the Spectrum Analyzer and Waveform Timeline require you to feed them some sort of sound player object. More
+ on that in a bit.</p>
+<p>Before you begin with using these controls, you&rsquo;ll be tasked with getting some sort of sound-processing code going. You could choose to write your own, but this is a pretty large task. I personally recommend you choose from one of the two big .NET
+ sound libraries out there. One option, and the one I personally use, is to use the
+<a href="http://www.un4seen.com/">BASS</a> sound library with the <a href="http://bass.radio42.com/">
+BASS.NET</a> wrapper to enable .NET support. Another popular option is to use the
+<a href="http://naudio.codeplex.com/">NAudio</a> sound library. I&rsquo;ll be including some instructions on getting the controls going with both of these libraries. These are far from your only two options, however, so I encourage you to explore your options.</p>
+<p>&nbsp;</p>
+<p><strong>Step 2 &ndash; Understanding WPF SVL&rsquo;s Architecture</strong></p>
+<p>Some WPFSVL control&rsquo;s can just be dropped into your Window and used. Others will require you to register them with a sound player before you can have them start rendering fancy-looking sound data. The controls that require sound players will follow
+ a similar architecture. There&rsquo;s two parts to this:</p>
+<ol>
+<li>Each control that requires a sound player will have an interface the sound player is required to implement. For the Spectrum Analyzer, this is
+<strong>ISpectrumPlayer</strong>. For the Waveform Timeline, this is <strong>IWaveformPlayer</strong>.
+</li><li>Once your sound player implements the necessary interfaces, you need to register them with the control.&nbsp; This is done by calling
+<strong>&lt;Control&gt;.RegisterSoundPlayer()</strong> and passing it your sound player.
+</li></ol>
+<p><a href="http://download.codeplex.com/download?ProjectName=wpfsvl&DownloadId=221204"><img title="image" src="http://download.codeplex.com/download?ProjectName=wpfsvl&DownloadId=221205" border="0" alt="image" width="410" height="438" style="padding-left:0px; padding-right:0px; display:inline; padding-top:0px; border:0px"></a></p>
+<p>Beyond that, WPF SVL also requires that your sound player implement <strong>INotifyPropertyChanged</strong> so that it can get update notifications for the properties it needs.</p>
+<p>&nbsp;</p>
+<p><strong>Step 3 &ndash; Coding Your Sound Player</strong></p>
+<p>This is where things will get more specific to the sound engine you&rsquo;re using. I&rsquo;m providing two examples of sound players that are compatible with WPFSVL, one for each of the two major sound libraries.</p>
+<ul>
+<li><a href="http://wpfsvl.codeplex.com/wikipage?title=Guide%3a%20WPFSVL%20and%20BASS.NET%20Integration" target="_self">Read Guide On Integrating WPFSVL and&nbsp;<strong>BASS.NET</strong>&nbsp;</a>
+</li><li>Read Guide On Creating a WPFSVL-compatible <strong>NAudio</strong> Sound Player (Coming Soon!)
+</li></ul>
+<p>&nbsp;</p>
+<p><strong>Step 4 &ndash; Adding WPFSVL Controls and Providing Themes!</strong></p>
+<p>We&rsquo;re almost there! All you really have to do now is add the controls to your Window and register your sound players with each of the controls as mentioned in Step 2. The last thing you&rsquo;ll want to do, even though it isn&rsquo;t absolutely required,
+ is customize the look of your controls a bit. Colors and functionality can be set via some of the Control&rsquo;s dependency properties. More complex layout changes can be made by creating a custom
+<strong>ControlTemplate</strong> for the Controls. All of the controls support this. Check out the Sample Applications for some examples of this in the context of different themes!</p>
+</div><div class="ClearBoth"></div>
