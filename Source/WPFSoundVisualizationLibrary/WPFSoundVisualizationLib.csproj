@@ -98,6 +98,7 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <AppDesigner Include="Properties\" />
+    <None Include="WPFSoundVisualizationLib.nuspec" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="Themes\Generic.xaml">

@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>WPFSVL</id>
+    <iconUrl>http://inchoatethoughts.com/images/WPFSVL.png</iconUrl>
+    <version>1.0.0</version>
+    <title>WPF Sound Visualization Library</title>
+    <authors>JJohnston</authors>
+    <owners>JJohnston</owners>
+    <licenseUrl>https://github.com/jacobjohnston/wpfsvl/blob/master/license.md</licenseUrl>
+    <projectUrl>https://github.com/jacobjohnston/wpfsvl</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>The WPF Sound Visualization Library is a collection of WPF Controls for graphically displaying data related to sound processing. Current controls include a Spectrum Analyzer, Waveform Timeline, and an Album Art Display Panel.</description>
+    <releaseNotes>Initial NuGet Package Release</releaseNotes>
+    <copyright>Copyright 2017 </copyright>
+    <tags>wpfsvl audio visualization visualizers sound</tags>
+  </metadata>
+</package>
